@@ -1,0 +1,6 @@
+kp19pp is LALR(1) parser generator.
+
+progress :
+  (phase 1) engine
+  (phase 2) scanner <- IMAKOKO...
+  (phase 3) target parser
