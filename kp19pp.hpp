@@ -393,6 +393,14 @@ namespace kp19pp{
         };
 
         struct symbol_data_type{
+            symbol_data_type() :
+                array_index(), linkdir(nonassoc), priority(0)
+            {}
+
+            symbol_data_type(const symbol_data_type &other) :
+                array_index(other.array_index), linkdir(other.linkdir), priority(other.priority)
+            {}
+
             // 動作配列上での位置
             std::size_t array_index;
             // 結合方向
@@ -431,7 +439,7 @@ namespace kp19pp{
         }
 
         template<class IsNotTerminal, class TermToStr>
-        bool make_lalr1_parsing_table(
+        bool make_parsing_table(
             const expression_type &start_prime,
             const term_type &dummy_term,
             const make_parsing_table_option &option,
@@ -542,7 +550,7 @@ namespace kp19pp{
 
             // 解析表を構築する
             t.restart();
-            make_parsing_table(
+            make_action_table(
                 items_set,
                 first_items_iter,
                 expression_set,
@@ -562,6 +570,11 @@ namespace kp19pp{
                 return false;
             }
 
+            if(option.put_log){
+                std::ofstream ofile("parsing_table.txt");
+                put_parsing_table(ofile, parsing_table, term_to_str);
+            }
+
             if(option.put_alltime){
                 std::cout << "total :\n  " << alltime.elapsed() << "sec\n";
             }
@@ -571,7 +584,7 @@ namespace kp19pp{
 
     private:
         template<class IsNotTerminal>
-        void make_parsing_table(
+        void make_action_table(
             const items_set_type &items_set,
             typename items_set_type::const_iterator first_items_iterator,
             const expression_set_type &expression_set,
@@ -648,16 +661,22 @@ namespace kp19pp{
                                 }
                             }else{
                                 if(option.avoid_conflict){
-                                    std::pair<std::size_t, std::size_t> p;
-                                    auto tag = act.item->rhs->tag();
-                                    if(tag == epsilon){
-                                        auto &x(terminal_data_map.find(tag)->second);
+                                    std::pair<std::size_t, std::size_t> p, q;
+                                    auto tag_p = act.item->rhs->tag();
+                                    if(tag_p == epsilon){
+                                        auto &x(terminal_data_map.find(epsilon)->second);
                                         p = std::make_pair(x.priority, x.linkdir);
                                     }else{
                                         p = rhs_priority(act.item->rhs);
                                     }
-                                    auto &q(terminal_data_map.find(other_act.item->lhs)->second);
-                                    if(p.first > q.priority || (p.first == q.priority && p.second == left)){
+                                    auto tag_q = other_act.item->rhs->tag();
+                                    if(tag_q == epsilon){
+                                        auto &x(terminal_data_map.find(epsilon)->second);
+                                        q = std::make_pair(x.priority, x.linkdir);
+                                    }else{
+                                        q = rhs_priority(other_act.item->rhs);
+                                    }
+                                    if(p.first > q.first || (p.first == q.first && p.second == left)){
                                         actions_i.erase(ret.first);
                                         actions_i.insert(std::make_pair(term, act));
                                     }
@@ -1126,7 +1145,8 @@ namespace kp19pp{
                                     ++first_set_y_iter
                                 ){
                                     auto &first_set_y(*first_set_y_iter);
-                                    if(z |= (first_set_x.find(first_set_y) == first_set_x.end())){
+                                    z = z | (first_set_x.find(first_set_y) == first_set_x.end());
+                                    if(z){
                                         first_set_x.insert(first_set_y);
                                     }
                                 }
@@ -1278,6 +1298,60 @@ namespace kp19pp{
             return z;
         }
 
+        template<class TermToStr>
+        void put_parsing_table(std::ostream &stream, const action_table_type &table, const TermToStr &term_to_str){
+            std::size_t i = 0;
+            for(auto table_element_iter = table.begin(), table_element_end = table.end(); table_element_iter != table_element_end; ++table_element_iter, ++i){
+                stream << "--------I_" << i << "\n";
+                auto &table_element(*table_element_iter);
+                auto &actions(*table_element.actions);
+                auto &goto_fns(*table_element.goto_fns);
+                std::size_t max_term_length = 0;
+                for(auto action_iter = actions.begin(), action_end = actions.end(); action_iter != action_end; ++action_iter){
+                    auto term(term_to_str(action_iter->first));
+                    if(max_term_length < term.size()){ max_term_length = term.size(); }
+                }
+                for(auto goto_fn_iter = goto_fns.begin(), goto_fn_end = goto_fns.end(); goto_fn_iter != goto_fn_end; ++goto_fn_iter){
+                    auto term(term_to_str(goto_fn_iter->first));
+                    if(max_term_length < term.size()){ max_term_length = term.size(); }
+                }
+                auto put_delim = [&](std::size_t m) -> void{
+                    for(std::size_t n = 0; n < max_term_length + 1 - m; ++n){
+                        stream << static_cast<char>(' ');
+                    }
+                };
+                for(auto action_iter = actions.begin(), action_end = actions.end(); action_iter != action_end; ++action_iter){
+                    auto &term_action(*action_iter);
+                    auto term(term_to_str(term_action.first));
+                    auto &action(term_action.second);
+                    stream << term;
+                    put_delim(term.size());
+                    stream << ": ";
+                    switch(action.first){
+                    case action_shift:
+                        stream << "shift " << action.second;
+                        break;
+
+                    case action_reduce:
+                        stream << "reduce " << term_to_str(action.item->lhs);
+                        break;
+
+                    case action_acc:
+                        stream << "accept!!";
+                        break;
+                    }
+                    stream << "\n";
+                }
+                for(auto goto_fn_iter = std::begin(goto_fns), goto_fn_end = std::end(goto_fns); goto_fn_iter != goto_fn_end; ++goto_fn_iter){
+                    auto term(term_to_str(goto_fn_iter->first));
+                    stream << term;
+                    put_delim(term.size());
+                    stream <<  ": goto " << goto_fn_iter->second << "\n";
+                }
+                stream << "\n";
+            }
+        }
+        
         expression_set_type   expression_set;
         term_set_type         terminal_symbol_set,
                               nonterminal_symbol_set;

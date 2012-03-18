@@ -4,3 +4,8 @@ progress :
   (phase 1) engine
   (phase 2) scanner <- IMAKOKO...
   (phase 3) target parser
+
+compiler :
+  gcc   4.6.1
+  clang 3.1
+  msvc  10

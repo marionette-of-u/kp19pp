@@ -2,128 +2,126 @@
 #include "kp19pp.hpp"
 
 namespace kp19pp{
-	struct eos_functor{
-		std::string operator ()() const{
-			return "$";
-		}
-	};
+    struct eos_functor{
+        std::string operator ()() const{
+            return "$";
+        }
+    };
 
-	struct eps_functor{
-		std::string operator ()() const{
-			return "";
-		}
-	};
+    struct eps_functor{
+        std::string operator ()() const{
+            return "eps";
+        }
+    };
 }
 
 int main(){
-	typedef kp19pp::lalr1_type<int, std::string, std::string, kp19pp::eos_functor, kp19pp::eps_functor> lalr1_type;
-	lalr1_type lalr1;
-	std::string dummy_term = "#";
+    typedef kp19pp::lalr1_type<int, std::string, std::string, kp19pp::eos_functor, kp19pp::eps_functor> lalr1_type;
+    lalr1_type lalr1;
+    std::string dummy_term = "#";
 
-	// 文法を定義する --------
-	// S' = S
-	lalr1_type::expression_type expression_start_prime;
-	{
-		lalr1_type::expression_type e;
-		e.lhs = "S'";
+    // 文法を定義する --------
+    // 拡大文法
+    // S' -> E
+    lalr1_type::expression_type expression_start_prime;
+    {
+        lalr1_type::expression_type e;
+        e.lhs = "S'";
 
-		{
-			lalr1_type::expression_type::rhs_type rhs;
-			rhs.push_back("S");
-			e.rhs.insert(rhs);
-		}
+        {
+            lalr1_type::expression_type::rhs_type rhs;
+            rhs.push_back("E");
+            e.rhs.insert(rhs);
+        }
 
-		lalr1.add_expression(e);
+        lalr1.add_expression(e);
 
-		expression_start_prime = e;
-	}
+        expression_start_prime = e;
+    }
 
-	// S
-	{
-		lalr1_type::expression_type e;
-		e.lhs = "S";
+    // E -> E + E
+    //    | E * E
+    //    | ( E )
+    //    | id
+    {
+        lalr1_type::expression_type e;
+        e.lhs = "E";
 
-		{
-			lalr1_type::expression_type::rhs_type rhs;
-			rhs.push_back("L");
-			rhs.push_back("=");
-			rhs.push_back("R");
-			e.rhs.insert(rhs);
-		}
+        {
+            lalr1_type::expression_type::rhs_type rhs;
+            rhs.push_back("E");
+            rhs.push_back("+");
+            rhs.push_back("E");
+            e.rhs.insert(rhs);
+        }
 
-		{
-			lalr1_type::expression_type::rhs_type rhs;
-			rhs.push_back("R");
-			e.rhs.insert(rhs);
-		}
+        {
+            lalr1_type::expression_type::rhs_type rhs;
+            rhs.push_back("E");
+            rhs.push_back("*");
+            rhs.push_back("E");
+            e.rhs.insert(rhs);
+        }
 
-		lalr1.add_expression(e);
-	}
+        {
+            lalr1_type::expression_type::rhs_type rhs;
+            rhs.push_back("(");
+            rhs.push_back("E");
+            rhs.push_back(")");
+            e.rhs.insert(rhs);
+        }
 
-	// L
-	{
-		lalr1_type::expression_type e;
-		e.lhs = "L";
+        {
+            lalr1_type::expression_type::rhs_type rhs;
+            rhs.push_back("id");
+            e.rhs.insert(rhs);
+        }
 
-		{
-			lalr1_type::expression_type::rhs_type rhs;
-			rhs.push_back("*");
-			rhs.push_back("R");
-			e.rhs.insert(rhs);
-		}
+        lalr1.add_expression(e);
+    }
 
-		{
-			lalr1_type::expression_type::rhs_type rhs;
-			rhs.push_back("identifier");
-			e.rhs.insert(rhs);
-		}
+    // 終端記号のデータを収集する --------
+    {
+        // !! dummy
+        lalr1_type::symbol_data_type symbol_data;
 
-		lalr1.add_expression(e);
-	}
+        symbol_data.linkdir = lalr1_type::left;
+        symbol_data.priority = 1;
+        lalr1.add_terminal_symbol("+", symbol_data);
 
-	// R
-	{
-		lalr1_type::expression_type e;
-		e.lhs = "R";
+        symbol_data.linkdir = lalr1_type::left;
+        symbol_data.priority = 2;
+        lalr1.add_terminal_symbol("*", symbol_data);
 
-		{
-			lalr1_type::expression_type::rhs_type rhs;
-			rhs.push_back("L");
-			e.rhs.insert(rhs);
-		}
+        symbol_data.linkdir = lalr1_type::nonassoc;
+        symbol_data.priority = 0;
+        lalr1.add_terminal_symbol("(", symbol_data);
+        lalr1.add_terminal_symbol(")", symbol_data);
+        lalr1.add_terminal_symbol("id", symbol_data);
+        lalr1.add_terminal_symbol(kp19pp::eos_functor()(), symbol_data);
+        lalr1.add_terminal_symbol(kp19pp::eps_functor()(), symbol_data);
+    }
 
-		lalr1.add_expression(e);
-	}
+    // エンジンのオプション --------
+    lalr1_type::make_parsing_table_option option;
+    option.avoid_conflict = true;
+    option.disambiguating = true;
+    option.put_log = true;
+    option.put_alltime = true;
+    option.put_time = true;
 
-	// 終端記号のデータを収集する --------
-	{
-		// !! dummy
-		lalr1_type::symbol_data_type symbol_data;
-		symbol_data.array_index = 0;
-		symbol_data.linkdir = lalr1_type::nonassoc;
-		symbol_data.priority = 0;
+    bool result = lalr1.make_parsing_table(
+        expression_start_prime,
+        dummy_term,
+        option,
+        kp19pp::default_is_not_terminal<lalr1_type::expression_set_type>(),
+        kp19pp::default_term_to_str<std::string>()
+    );
 
-		lalr1.add_terminal_symbol("=", symbol_data);
-		lalr1.add_terminal_symbol("*", symbol_data);
-		lalr1.add_terminal_symbol("identifier", symbol_data);
-	}
+    if(!result){
+        std::cout << "faild...\n";
+    }
 
-	// エンジンのオプション --------
-	lalr1_type::make_parsing_table_option option;
-	option.avoid_conflict = true;
-	option.disambiguating = true;
-	option.put_log = true;
-	option.put_alltime = true;
-	option.put_time = true;
-
-	lalr1.make_lalr1_parsing_table(
-		expression_start_prime,
-		dummy_term,
-		option,
-		kp19pp::default_is_not_terminal<lalr1_type::expression_set_type>(),
-		kp19pp::default_term_to_str<std::string>()
-	);
-
-	return 0;
+    return 0;
 }
 
