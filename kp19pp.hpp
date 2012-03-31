@@ -15,14 +15,14 @@
 #include <fstream>
 #include <climits>
 #include <boost/timer.hpp>
-//#include <boost/functional/hash.hpp>
+// #include <boost/functional/hash.hpp>
 
 namespace kp19pp{
     template<class Type>
     inline void hash_combine(std::size_t &h, const Type &value){
         // XOR combine
         h = h ^ std::hash<Type>()(value);
-        //boost::hash_combine(h, value);
+        // boost::hash_combine(h, value);
     }
 
     // 与えられたシンボルが非終端記号かを判定する functor
@@ -728,7 +728,7 @@ namespace kp19pp{
             };
 
             // !!
-            // g++ 4.6.1 だと slr_goto がキャプチャされない
+            // g++ 4.7.0 だと slr_goto がキャプチャされない
             void (*ref_slr_goto)(
                 item_set_type&,
                 const expression_set_type&,
@@ -1063,7 +1063,7 @@ namespace kp19pp{
                     const IsNotTerminal&
                 ) = slr_goto;
                 // !!
-                // gcc 4.6.1 だと main_items がキャプチャされない
+                // gcc 4.7.0 だと main_items がキャプチャされない
                 auto ref_main_items(main_items);
                 auto fn = [&](const term_set_type &symbol_set){
                     for(auto term_iter = symbol_set.begin(), term_end = symbol_set.end(); term_iter != term_end; ++term_iter){
