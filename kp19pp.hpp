@@ -47,6 +47,48 @@ namespace kp19pp{
         }
     };
 
+    template<class Value, class Term>
+    struct basic_token_type{
+        typedef Value value_type;
+        typedef Term term_type;
+
+        basic_token_type()
+            : value(), term(), char_num(0), line_num()
+        {}
+
+        basic_token_type(const value_type &value_, const term_type &term_, std::size_t char_num_, std::size_t line_num_) :
+            value(value_),
+            term(term_),
+            char_num(char_num_),
+            line_num(line_num_)
+        {}
+
+        basic_token_type(const basic_token_type &other)
+            : value(other.value), term(other.term), char_num(other.char_num), line_num(other.line_num)
+        {}
+
+        basic_token_type(basic_token_type &&other)
+            : value(std::move(other.value)), term(std::move(other.term)), char_num(std::move(other.char_num)), line_num(std::move(other.line_num))
+        {}
+
+        basic_token_type &operator =(const basic_token_type &other){
+            value = other.value;
+            term = other.term;
+            char_num = other.char_num;
+            line_num = other.line_num;
+            return *this;
+        }
+
+        value_type value;
+        term_type term;
+        std::size_t char_num, line_num;
+        struct hash{
+            std::size_t operator ()(const basic_token_type &item) const{
+                return typename value_type::hash()(item.value);
+            }
+        };
+    };
+
     template<class Value, class Term, class Semantic, class EOSFn, class EPSFn>
     class lalr1_type{
     public:
@@ -55,19 +97,7 @@ namespace kp19pp{
         typedef Semantic semantic_type;
         typedef EOSFn eos_functor_type;
         typedef EPSFn eps_functor_type;
-        struct token_type{
-            token_type()
-                : value(), term(), char_num(), line_num()
-            {}
-
-            token_type(const token_type &other)
-                : value(other.value), term(other.term), char_num(other.char_num), line_num(other.line_num)
-            {}
-
-            value_type value;
-            term_type term;
-            std::size_t char_num, line_num;
-        };
+        typedef basic_token_type<Value, Term> token_type;
 
         typedef std::unordered_set<term_type> term_set_type;
         class expression_type{
@@ -142,7 +172,6 @@ namespace kp19pp{
                     }
                 };
 
-            public:
                 mutable semantic_type semantic;
 
             private:
@@ -237,8 +266,8 @@ namespace kp19pp{
         };
 
         struct item_set_type : public std::set<item_type>{
-            const item_set_type mutable *mirror;
             typedef std::unordered_map<term_type, const item_set_type*> goto_map_type;
+            const item_set_type mutable *mirror;
             mutable goto_map_type goto_map;
             item_set_type() :
                 std::set<item_type>(), mirror(nullptr), goto_map()
@@ -251,6 +280,13 @@ namespace kp19pp{
             item_set_type(item_set_type &&other) :
                 std::set<item_type>(other), mirror(std::move(other.mirror)), goto_map(std::move(other.goto_map))
             {}
+
+            item_set_type &operator =(const item_set_type &other){
+                std::set<item_type>::operator =(other);
+                mirror = other.mirror;
+                goto_map = other.goto_map;
+                return *this;
+            }
         };
 
         typedef std::set<item_set_type> items_set_type;
@@ -291,6 +327,18 @@ namespace kp19pp{
         };
         
         struct actions_type : public std::map<term_type, action_type>{
+            actions_type() :
+                std::map<term_type, action_type>()
+            {}
+
+            actions_type(const actions_type &other) :
+                std::map<term_type, action_type>(other)
+            {}
+                
+            actions_type(actions_type &&other) :
+                std::map<term_type, action_type>(other)
+            {}
+                
             actions_type &operator =(const actions_type &other){
                 std::map<term_type, action_type>::operator =(other);
                 return *this;
@@ -315,6 +363,18 @@ namespace kp19pp{
         };
 
         struct goto_fns_type : public std::map<term_type, std::size_t>{
+            goto_fns_type() :
+                std::map<term_type, std::size_t>()
+            {}
+            
+            goto_fns_type(const goto_fns_type &other) :
+                std::map<term_type, std::size_t>(other)
+            {}
+
+            goto_fns_type(goto_fns_type &&other) :
+                std::map<term_type, std::size_t>(other)
+            {}
+
             goto_fns_type &operator =(const goto_fns_type &other){
                 std::map<term_type, std::size_t>::operator =(other);
                 return *this;
@@ -338,12 +398,12 @@ namespace kp19pp{
             };
         };
 
-        struct table_element{
+        struct table_element_type{
             const actions_type *actions;
             const goto_fns_type *goto_fns;
         };
 
-        typedef std::vector<table_element> action_table_type;
+        typedef std::vector<table_element_type> action_table_type;
         typedef std::set<actions_type> actions_set_type;
         typedef std::set<goto_fns_type> goto_fns_set_type;
         struct conflict_type{
@@ -394,15 +454,13 @@ namespace kp19pp{
 
         struct symbol_data_type{
             symbol_data_type() :
-                array_index(), linkdir(nonassoc), priority(0)
+                linkdir(nonassoc), priority(0)
             {}
 
             symbol_data_type(const symbol_data_type &other) :
-                array_index(other.array_index), linkdir(other.linkdir), priority(other.priority)
+                linkdir(other.linkdir), priority(other.priority)
             {}
 
-            // 動作配列上での位置
-            std::size_t array_index;
             // 結合方向
             terminal_symbol_linkdir linkdir;
             // 優先順位
@@ -430,13 +488,57 @@ namespace kp19pp{
         };
 
         void add_terminal_symbol(const term_type &term, const symbol_data_type &symbol_data){
-            terminal_symbol_set.insert(term);
+            terminal_symbol_map.insert(term);
             terminal_data_map[term] = symbol_data;
         }
 
         void add_expression(const expression_type &expression){
             expression_set.insert(expression);
         }
+
+        lalr1_type() :
+            expression_set(),
+            terminal_symbol_map(),
+            nonterminal_symbol_map(),
+            terminal_data_map(),
+            nonterminal_data_map(),
+            items_set(),
+            parsing_table(),
+            actions_set(),
+            goto_fns_set(),
+            conflict_set(),
+            ref_parsing_table(parsing_table)
+        {}
+
+        lalr1_type(const lalr1_type &other) :
+            expression_set(other.expression_set),
+            terminal_symbol_map(other.terminal_symbol_map),
+            nonterminal_symbol_map(other.nonterminal_symbol_map),
+            terminal_data_map(other.terminal_data_map),
+            nonterminal_data_map(other.nonterminal_data_map),
+            items_set(other.items_set),
+            parsing_table(other.parsing_table),
+            actions_set(other.actions_set),
+            goto_fns_set(other.goto_fns_set),
+            conflict_set(other.conflict_set),
+            ref_parsing_table(parsing_table)
+        {}
+
+        lalr1_type(lalr1_type &&other) :
+            expression_set(std::move(other.expression_set)),
+            terminal_symbol_map(std::move(other.terminal_symbol_map)),
+            nonterminal_symbol_map(std::move(other.nonterminal_symbol_map)),
+            terminal_data_map(std::move(other.terminal_data_map)),
+            nonterminal_data_map(std::move(other.nonterminal_data_map)),
+            items_set(std::move(other.items_set)),
+            parsing_table(std::move(other.parsing_table)),
+            actions_set(std::move(other.actions_set)),
+            goto_fns_set(std::move(other.goto_fns_set)),
+            conflict_set(std::move(other.conflict_set)),
+            ref_parsing_table(parsing_table)
+        {}
+            
+        virtual ~lalr1_type(){}
 
         template<class IsNotTerminal, class TermToStr>
         bool make_parsing_table(
@@ -451,14 +553,11 @@ namespace kp19pp{
 
             // 非終端記号のデータを収集
             {
-                std::size_t i = 0;
-                nonterminal_symbol_set.insert(start_prime.lhs);
-                nonterminal_data_map[start_prime.lhs].array_index = i++;
+                nonterminal_symbol_map.insert(start_prime.lhs);
                 for(auto iter = expression_set.begin(), end = expression_set.end(); iter != end; ++iter){
                     auto &expression(*iter);
                     if(expression == start_prime){ continue; }
-                    nonterminal_symbol_set.insert(expression.lhs);
-                    nonterminal_data_map[expression.lhs].array_index = i++;
+                    nonterminal_symbol_map.insert(expression.lhs);
                 }
             }
 
@@ -467,7 +566,7 @@ namespace kp19pp{
             // FIRST 集合を構築する
             t.restart();
             fset_type first_set;
-            make_first_set(first_set, expression_set, nonterminal_symbol_set, is_not_terminal);
+            make_first_set(first_set, expression_set, nonterminal_symbol_map, is_not_terminal);
             if(option.put_time){
                 std::cout << "make first-set :\n  " << t.elapsed() << "sec\n";
             }
@@ -485,7 +584,7 @@ namespace kp19pp{
                 i.pos = 0;
                 i.rhs = &*start_prime.rhs.begin();
                 init.insert(i);
-                slr_items(slr_items_set, expression_set, terminal_symbol_set, nonterminal_symbol_set, init, is_not_terminal);
+                slr_items(slr_items_set, expression_set, terminal_symbol_map, nonterminal_symbol_map, init, is_not_terminal);
             }
             if(option.put_time){
                 std::cout << "lr0 items :\n  " << t.elapsed() << "sec\n";
@@ -508,8 +607,8 @@ namespace kp19pp{
                 slr_items_set,
                 items_set,
                 expression_set,
-                terminal_symbol_set,
-                nonterminal_symbol_set,
+                terminal_symbol_map,
+                nonterminal_symbol_map,
                 start_prime.lhs,
                 is_not_terminal
             );
@@ -661,6 +760,8 @@ namespace kp19pp{
                                 }
                             }else{
                                 if(option.avoid_conflict){
+                                    // !!
+                                    // MSVCで std::pair<std::size_t, terminal_symbol_linkdir> にすると error C2273 が発生
                                     std::pair<std::size_t, std::size_t> p, q;
                                     auto tag_p = act.item->rhs->tag();
                                     if(tag_p == epsilon){
@@ -860,7 +961,7 @@ namespace kp19pp{
                         }
                         auto insert_result = result.insert(nitem);
                         if(!(z |= insert_result.second)){
-                            item_type &dst(const_cast<item_type&>(*insert_result.first));
+                            const item_type &dst(*insert_result.first);
                             for(auto iter = nitem.lookahead.begin(), end = nitem.lookahead.end(); iter != end; ++iter){
                                 z |= dst.lookahead.insert(*iter).second;
                             }
@@ -945,8 +1046,8 @@ namespace kp19pp{
             const items_set_type &items_set,
             const items_set_type &main_items_set,
             const expression_set_type &expression_set,
-            const term_set_type &terminal_symbol_set,
-            const term_set_type &nonterminal_symbol_set,
+            const term_set_type &terminal_symbol_map,
+            const term_set_type &nonterminal_symbol_map,
             const term_type &first_term,
             const IsNotTerminal &is_not_terminal
         ){
@@ -974,8 +1075,8 @@ namespace kp19pp{
                         item_set.mirror->goto_map[x] = &*main_items_set.find(goto_ix_);
                     }
                 };
-                fn(terminal_symbol_set);
-                fn(nonterminal_symbol_set);
+                fn(terminal_symbol_map);
+                fn(nonterminal_symbol_map);
             }
         }
 
@@ -1065,8 +1166,8 @@ namespace kp19pp{
         static typename items_set_type::iterator slr_items(
             items_set_type &result,
             const expression_set_type &expression_set,
-            const term_set_type &terminal_symbol_set,
-            const term_set_type &nonterminal_symbol_set,
+            const term_set_type &terminal_symbol_map,
+            const term_set_type &nonterminal_symbol_map,
             const item_set_type &i_set,
             const IsNotTerminal &is_not_terminal
         ){
@@ -1102,8 +1203,8 @@ namespace kp19pp{
                             }
                         }
                     };
-                    fn(terminal_symbol_set);
-                    fn(nonterminal_symbol_set);
+                    fn(terminal_symbol_map);
+                    fn(nonterminal_symbol_map);
                 }
             }while(z);
             return ret;
@@ -1113,7 +1214,7 @@ namespace kp19pp{
         static void make_first_set(
             fset_type &first_set,
             const expression_set_type &expression_set,
-            const term_set_type &nonterminal_symbol_set,
+            const term_set_type &nonterminal_symbol_map,
             const IsNotTerminal &is_not_terminal
         ){
             typename expression_type::rhs_type rhs_epsilon;
@@ -1121,7 +1222,7 @@ namespace kp19pp{
             bool z;
             do{
                 z = false;
-                for(auto x_iter = nonterminal_symbol_set.begin(), x_end = nonterminal_symbol_set.end(); x_iter != x_end; ++x_iter){
+                for(auto x_iter = nonterminal_symbol_map.begin(), x_end = nonterminal_symbol_map.end(); x_iter != x_end; ++x_iter){
                     auto &x(*x_iter);
                     {
                         expression_type dummy_lhs(x);
@@ -1342,7 +1443,7 @@ namespace kp19pp{
                     }
                     stream << "\n";
                 }
-                for(auto goto_fn_iter = std::begin(goto_fns), goto_fn_end = std::end(goto_fns); goto_fn_iter != goto_fn_end; ++goto_fn_iter){
+                for(auto goto_fn_iter = goto_fns.begin(), goto_fn_end = goto_fns.end(); goto_fn_iter != goto_fn_end; ++goto_fn_iter){
                     auto term(term_to_str(goto_fn_iter->first));
                     stream << term;
                     put_delim(term.size());
@@ -1353,8 +1454,8 @@ namespace kp19pp{
         }
         
         expression_set_type   expression_set;
-        term_set_type         terminal_symbol_set,
-                              nonterminal_symbol_set;
+        term_set_type         terminal_symbol_map,
+                              nonterminal_symbol_map;
         symbol_data_map_type  terminal_data_map,
                               nonterminal_data_map;
         items_set_type        items_set;
@@ -1362,6 +1463,9 @@ namespace kp19pp{
         actions_set_type      actions_set;
         goto_fns_set_type     goto_fns_set;
         conflict_set_type     conflict_set;
+
+    public:
+        const action_table_type &ref_parsing_table;
     };
 }
 
