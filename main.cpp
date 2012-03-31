@@ -2,11 +2,7 @@
 #include "exception.hpp"
 #include "scanner.hpp"
 
-void example();
-
 int main(){
-    //example();
-
     std::ifstream ifile("ifile.txt");
     if(!ifile){
         std::cerr << "ファイルの読み込みに失敗しました.\n";
