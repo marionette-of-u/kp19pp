@@ -30,14 +30,8 @@ namespace kp19pp{
             string_iter_pair_type(scanner_string_type::const_iterator first, scanner_string_type::const_iterator last);
             string_iter_pair_type &operator =(const string_iter_pair_type &other);
             string_iter_pair_type &operator =(std::pair<scanner_string_type::const_iterator, scanner_string_type::const_iterator>);
-
             struct hash{
-                std::size_t operator ()(const string_iter_pair_type &item) const{
-                    std::size_t h = 0;
-                    hash_combine(h, &*item.begin());
-                    hash_combine(h, &*item.end());
-                    return h;
-                }
+                std::size_t operator ()(const string_iter_pair_type &item) const;
             };
         };
 
@@ -51,6 +45,7 @@ namespace kp19pp{
             semantic_type();
             semantic_type(const semantic_type &other);
             semantic_type(semantic_type &&other);
+            semantic_type &operator =(const semantic_type &other);
             token_type operator ()(const value_type &value, scanner_type &data) const;
             static token_type eat(const value_type &value, scanner_type &data);
         };

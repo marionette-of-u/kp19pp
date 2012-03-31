@@ -105,20 +105,32 @@ namespace kp19pp{
             class rhs_type : public std::vector<term_type>{
             public:
                 static const bool has_semantic = true;
-                rhs_type()
-                    : std::vector<term_type>(), number_(0), tag_()
+                rhs_type() :
+                    std::vector<term_type>(),
+                    semantic(),
+                    number_(0),
+                    tag_()
                 {}
                 
-                rhs_type(std::size_t arg_number, term_type arg_tag)
-                    : std::vector<term_type>(), number_(arg_number), tag_(arg_tag)
+                rhs_type(std::size_t arg_number, term_type arg_tag) :
+                    std::vector<term_type>(),
+                    semantic(),
+                    number_(arg_number),
+                    tag_(arg_tag)
                 {}
                 
-                rhs_type(const rhs_type &other)
-                    : std::vector<term_type>(other), number_(other.number_), tag_(other.tag_)
+                rhs_type(const rhs_type &other) :
+                    std::vector<term_type>(other),
+                    semantic(other.semantic),
+                    number_(other.number_),
+                    tag_(other.tag_)
                 {}
                 
-                rhs_type(rhs_type &&other)
-                    : std::vector<term_type>(other), number_(std::move(other.number_)), tag_(std::move(other.tag_))
+                rhs_type(rhs_type &&other) :
+                    std::vector<term_type>(other),
+                    semantic(std::move(other.semantic)),
+                    number_(std::move(other.number_)),
+                    tag_(std::move(other.tag_))
                 {}
 
                 rhs_type &operator =(const rhs_type &other){

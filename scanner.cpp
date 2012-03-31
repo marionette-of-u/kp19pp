@@ -63,6 +63,14 @@ namespace kp19pp{
             return *this;
         }
 
+        std::size_t string_iter_pair_type::hash::operator ()(const string_iter_pair_type &item) const{
+            std::size_t h = 0;
+            for(auto iter = item.begin(), end = item.end(); iter != end; ++iter){
+                hash_combine(h, *iter);
+            }
+            return h;
+        }
+
         const scanner_string_type dummy_string;
         
         semantic_type::semantic_type() :
@@ -76,6 +84,11 @@ namespace kp19pp{
         semantic_type::semantic_type(semantic_type &&other) :
             action(std::move(other.action))
         {}
+
+        semantic_type &semantic_type::operator =(const semantic_type &other){
+            action = other.action;
+            return *this;
+        }
 
         semantic_type::token_type semantic_type::operator ()(const value_type &value, scanner_type &data) const{
             return action(value, data);
@@ -153,12 +166,18 @@ namespace kp19pp{
         void scanner_type::nonterminal_symbol_data_type::rhs_type::clear(){
             base_type::clear();
             semantic_action.value = string_iter_pair_type(dummy_string.begin(), dummy_string.end());
+            tag.value = string_iter_pair_type(dummy_string.begin(), dummy_string.end());
+            number = std::size_t();
+            argindex_to_symbol_map.clear();
+            argindex_max = 0;
         }
             
         std::size_t scanner_type::nonterminal_symbol_data_type::rhs_type::hash::operator ()(const rhs_type &item) const{
             std::size_t h = 0;
             for(auto iter = item.begin(), end = item.end(); iter != end; ++iter){
-                hash_combine(h, iter->first->value.term);
+                for(auto iiter = iter->first->value.value.begin(), eend = iter->first->value.value.end(); iiter != eend; ++iiter){
+                    hash_combine(h, *iiter);
+                }
             }
             return h;
         }
@@ -561,8 +580,8 @@ namespace kp19pp{
             }
 
             token_type insert_rhs_element(const token_type &identifier, const token_type &arg, const semantic_type::value_type &value, scanner_type &data){
-                scanner_type::terminal_symbol_data_type terminal_symbol_data;
                 scanner_type::symbol_type nonterminal_symbol = make_symbol(identifier, identifier.term);
+                scanner_type::terminal_symbol_data_type terminal_symbol_data;
                 std::pair<scanner_type::terminal_symbol_map_type::iterator, bool> find_ret_terminal_symbol;
                 std::pair<scanner_type::nonterminal_symbol_map_type::iterator, bool> find_ret_nonterminal_symbol;
                 find_ret_terminal_symbol.first = data.terminal_symbol_map.find(make_symbol(identifier, identifier.term));
@@ -591,10 +610,10 @@ namespace kp19pp{
                         throw(
                             exception(
                                 "'" +
-                                std::string(find_ret_terminal_symbol.first->first.value.value.begin(), find_ret_terminal_symbol.first->first.value.value.end()) +
+                                std::string(nonterminal_symbol.value.value.begin(), nonterminal_symbol.value.value.end()) +
                                 "' 引数が重複しています.",
-                                find_ret_terminal_symbol.first->first.value.char_num,
-                                find_ret_terminal_symbol.first->first.value.line_num
+                                nonterminal_symbol.value.char_num,
+                                nonterminal_symbol.value.line_num
                             )
                         );
                     }
@@ -602,7 +621,7 @@ namespace kp19pp{
                 if(arg.value.begin() != arg.value.end()){
                     if(find_ret_terminal_symbol.first != data.terminal_symbol_map.end()){
                         auto &type(terminal_symbol_data.type);
-                        if(type.value.begin() == type.value.end()){
+                        if(type.value.empty()){
                             throw(
                                 exception(
                                     "'" +
@@ -681,8 +700,8 @@ namespace kp19pp{
                             throw(
                                 exception(
                                     "規則内での引数が連続していません.",
-                                    data.current_nonterminal_symbol_iter->first.value.char_num,
-                                    data.current_nonterminal_symbol_iter->first.value.line_num
+                                    data.current_rhs.begin()->first->value.char_num,
+                                    data.current_rhs.end()->first->value.line_num
                                 )
                             );
                         }
@@ -842,11 +861,11 @@ namespace kp19pp{
             DECL_SEQS_EPS(
                 NestIdentifier_opt,
                 ((NestIdentifier.lhs))                                              (make_nest_identifier_opt)
-            )
+            );
 
             DECL_SEQS(
                 NestIdentifier,
-                ((double_colon)(identifier)(TemplateArg_opt.lhs))                    (make_nest_identifier_a)
+                ((double_colon)(identifier)(TemplateArg_opt.lhs))                   (make_nest_identifier_a)
                 ((dot)(identifier)(TemplateArg_opt.lhs))                            (make_nest_identifier_a)
                 ((NestIdentifier.lhs)(double_colon)(identifier)(TemplateArg_opt.lhs))
                                                                                     (make_nest_identifier_b)
