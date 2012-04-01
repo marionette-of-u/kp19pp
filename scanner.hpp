@@ -156,32 +156,37 @@ namespace kp19pp{
             term_type next_nonterminal_symbol_id();
             std::size_t next_rhs_number();
             void clear_rhs_number();
+            bool get_scanned_first_nonterminal_symbol() const;
+            void set_scanned_first_nonterminal_symbol();
 
         private:
             static void define_grammar();
             void check_undefined_nonterminal_symbol();
+            void check_linked_nonterminal_symbol();
             void normalize_token_order();
             template<class PutFn, class ErrorFn>
             bool parse(const PutFn &put_fn, const ErrorFn &error_fn);
 
         public:
-            token_seq_type                              token_seq;
-            scanner_string_type                         start_prime;
-            string_iter_pair_type                       namespace_token,
-                                                        namespace_grammar;
-            std::size_t                                 current_priority;
-            std::vector<terminal_symbol_data_type*>     current_terminal_symbol_seq;
-            nonterminal_symbol_data_type::rhs_type      current_rhs;
-            terminal_symbol_map_type                    terminal_symbol_map;
-            nonterminal_symbol_map_type                 nonterminal_symbol_map;
-            undefined_nonterminal_symbol_set_type       undefined_nonterminal_symbol_set;
-            nonterminal_symbol_map_type::iterator       current_nonterminal_symbol_iter;
+            token_seq_type                          token_seq;
+            scanner_string_type                     start_prime;
+            string_iter_pair_type                   namespace_token,
+                                                    namespace_grammar;
+            std::size_t                             current_priority;
+            std::vector<terminal_symbol_data_type*> current_terminal_symbol_seq;
+            nonterminal_symbol_data_type::rhs_type  current_rhs;
+            terminal_symbol_map_type                terminal_symbol_map;
+            nonterminal_symbol_map_type             nonterminal_symbol_map;
+            undefined_nonterminal_symbol_set_type   undefined_nonterminal_symbol_set;
+            nonterminal_symbol_map_type::iterator   current_nonterminal_symbol_iter;
+            symbol_type                             first_nonterminal_symbol;
 
         private:
             scanner_string_type string;
             term_type           current_terminal_symbol_id,
                                 current_nonterminal_symbol_id;
             std::size_t         current_rhs_number;
+            bool                scanned_first_nonterminal_symbol;
         };
 
         extern scanner_type scanner;

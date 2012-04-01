@@ -5,8 +5,8 @@ language : C++11
 progress :
   (phase 1) engine
   (phase 2) scanner
-    (phase 2.5) error check code <- IMAKOKO...
-  (phase 3) target parser
+    (phase 2.5) error check code
+  (phase 3) target parser <- IMAKOKO...
 
 compiler :
   gcc  4.7.0

@@ -15,14 +15,12 @@
 #include <fstream>
 #include <climits>
 #include <boost/timer.hpp>
-// #include <boost/functional/hash.hpp>
 
 namespace kp19pp{
     template<class Type>
     inline void hash_combine(std::size_t &h, const Type &value){
         // XOR combine
         h = h ^ std::hash<Type>()(value);
-        // boost::hash_combine(h, value);
     }
 
     // 与えられたシンボルが非終端記号かを判定する functor

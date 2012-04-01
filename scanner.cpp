@@ -211,7 +211,8 @@ namespace kp19pp{
             current_priority(0),
             current_terminal_symbol_id(1),
             current_nonterminal_symbol_id(1),
-            current_rhs_number(0)
+            current_rhs_number(0),
+            scanned_first_nonterminal_symbol(false)
         {
             start_prime.push_back('S'), start_prime.push_back('\'');
         }
@@ -232,6 +233,14 @@ namespace kp19pp{
             current_rhs_number = 0;
         }
 
+        bool scanner_type::get_scanned_first_nonterminal_symbol() const{
+            return scanned_first_nonterminal_symbol;
+        }
+
+        void scanner_type::set_scanned_first_nonterminal_symbol(){
+            scanned_first_nonterminal_symbol = true;
+        }
+
         void scanner_type::check_undefined_nonterminal_symbol(){
             if(undefined_nonterminal_symbol_set.empty()){ return; }
             exception_seq e("定義されていない記号です.");
@@ -243,11 +252,51 @@ namespace kp19pp{
                 e.seq.push_back(
                     exception(
                         std::string(iter->value.value.begin(), iter->value.value.end()),
-                        iter->value.char_num, iter->value.line_num
+                        iter->value.char_num,
+                        iter->value.line_num
                     )
                 );
             }
             throw(e);
+        }
+
+        void scanner_type::check_linked_nonterminal_symbol(){
+            std::set<const symbol_type*> scanned_nonterminal_symbol_set;
+            std::function<void(const symbol_type*, const nonterminal_symbol_data_type*)> rec_fn;
+            rec_fn = [&](const symbol_type *nonterminal_symbol, const nonterminal_symbol_data_type *data) -> void{
+                scanned_nonterminal_symbol_set.insert(nonterminal_symbol);
+                for(auto iter = data->rhs.begin(), end = data->rhs.end(); iter != end; ++iter){
+                    auto &rhs_seq(*iter);
+                    for(auto rhs_iter = rhs_seq.begin(), rhs_end = rhs_seq.end(); rhs_iter != rhs_end; ++rhs_iter){
+                        auto &symbol(rhs_iter->first);
+                        auto nonterminal_data_iter = nonterminal_symbol_map.find(symbol);
+                        if(nonterminal_data_iter == nonterminal_symbol_map.end()){ continue; }
+                        auto find_ret = scanned_nonterminal_symbol_set.find(&nonterminal_data_iter->first);
+                        if(find_ret != scanned_nonterminal_symbol_set.end()){ continue; }
+                        rec_fn(&symbol, &nonterminal_data_iter->second);
+                    }
+                }
+            };
+            rec_fn(
+                &nonterminal_symbol_map.find(first_nonterminal_symbol)->first,
+                &nonterminal_symbol_map[first_nonterminal_symbol]
+            );
+            exception_seq e("使われない非終端記号を検出しました.");
+            for(auto iter = nonterminal_symbol_map.begin(), end = nonterminal_symbol_map.end(); iter != end; ++iter){
+                auto ptr(&iter->first);
+                if(scanned_nonterminal_symbol_set.find(ptr) == scanned_nonterminal_symbol_set.end()){
+                    e.seq.push_back(
+                        exception(
+                            std::string(ptr->value.value.begin(), ptr->value.value.end()),
+                            ptr->value.char_num,
+                            ptr->value.line_num
+                        )
+                    );
+                }
+            }
+            if(!e.seq.empty()){
+                throw(e);
+            }
         }
 
         void scanner_type::normalize_token_order(){
@@ -742,6 +791,10 @@ namespace kp19pp{
             token_type make_lhs(const semantic_type::value_type &value, scanner_type &data){
                 auto &identifier(value[0]);
                 auto &type(value.back());
+                if(!data.get_scanned_first_nonterminal_symbol()){
+                    data.first_nonterminal_symbol.value = identifier;
+                    data.set_scanned_first_nonterminal_symbol();
+                }
                 scanner_type::symbol_type undefined_dummy;
                 undefined_dummy.value = identifier;
                 auto ret = data.undefined_nonterminal_symbol_set.find(undefined_dummy);
@@ -790,7 +843,7 @@ namespace kp19pp{
                 return value[1];
             }
 
-            token_type make_exp(const semantic_type::value_type &value, scanner_type &data){
+            token_type make_expression(const semantic_type::value_type &value, scanner_type &data){
                 data.clear_rhs_number();
                 return eat(value, data);
             }
@@ -1005,7 +1058,7 @@ namespace kp19pp{
 
             DECL_SEQS(
                 Exp,
-                ((LHS.lhs)(symbol_colon)(RHS.lhs))                                  (make_exp)
+                ((LHS.lhs)(symbol_colon)(RHS.lhs))                                  (make_expression)
             );
 
             DECL_SEQS(
@@ -1318,6 +1371,7 @@ namespace kp19pp{
             }
 
             check_undefined_nonterminal_symbol();
+            check_linked_nonterminal_symbol();
             normalize_token_order();
         }
     }
