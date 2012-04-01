@@ -35,7 +35,7 @@ namespace kp19pp{
         }
 
         string_iter_pair_type::string_iter_pair_type() :
-            base_type()
+            base_type(dummy_strage().begin(), dummy_strage().end())
         {}
 
         string_iter_pair_type::string_iter_pair_type(const string_iter_pair_type &other) :
@@ -61,6 +61,19 @@ namespace kp19pp{
         string_iter_pair_type &string_iter_pair_type::operator =(std::pair<scanner_string_type::const_iterator, scanner_string_type::const_iterator> pair){
             base_type::operator =(pair);
             return *this;
+        }
+
+        bool string_iter_pair_type::operator ==(const string_iter_pair_type &other) const{
+            if(size() != other.size()){ return false; }
+            for(auto iter = begin(), other_iter = other.begin(); iter != end(); ++iter, ++other_iter){
+                if(*iter != *other_iter){ return false; }
+            }
+            return true;
+        }
+
+        scanner_string_type &string_iter_pair_type::dummy_strage(){
+            static scanner_string_type dummy;
+            return dummy;
         }
 
         std::size_t string_iter_pair_type::hash::operator ()(const string_iter_pair_type &item) const{
@@ -107,7 +120,16 @@ namespace kp19pp{
         {}
 
         bool scanner_type::symbol_type::operator ==(const symbol_type &other) const{
-            return value.term == other.value.term;
+            auto iter = value.value.begin(), other_iter = other.value.value.begin(), end = value.value.end();
+            for(; iter != end; ++iter, ++other_iter){
+                if(*iter != *other_iter){
+                    return false;
+                }
+            }
+            if(other_iter != other.value.value.end()){
+                return false;
+            }
+            return true;
         }
 
         std::size_t scanner_type::symbol_type::hash::operator ()(const symbol_type &item) const{
@@ -144,7 +166,8 @@ namespace kp19pp{
             semantic_action(other.semantic_action),
             tag(other.tag),
             number(other.number),
-            argindex_to_symbol_map(other.argindex_to_symbol_map)
+            argindex_to_symbol_map(other.argindex_to_symbol_map),
+            argindex_max(other.argindex_max)
         {}
 
         scanner_type::nonterminal_symbol_data_type::rhs_type::rhs_type(rhs_type &&other) :
@@ -152,13 +175,14 @@ namespace kp19pp{
             semantic_action(std::move(other.semantic_action)),
             tag(std::move(other.tag)),
             number(std::move(other.number)),
-            argindex_to_symbol_map(std::move(other.argindex_to_symbol_map))
+            argindex_to_symbol_map(std::move(other.argindex_to_symbol_map)),
+            argindex_max(std::move(other.argindex_max))
         {}
 
         bool scanner_type::nonterminal_symbol_data_type::rhs_type::operator==(const rhs_type &other) const{
             if(size() != other.size()){ return false; }
             for(auto iter = begin(), last = end(), other_iter = other.begin(); iter != last; ++iter, ++other_iter){
-                if(iter->first->value.term != other_iter->first->value.term){ return false; }
+                if(!(iter->first.value.value == other_iter->first.value.value)){ return false; }
             }
             return true;
         }
@@ -175,7 +199,7 @@ namespace kp19pp{
         std::size_t scanner_type::nonterminal_symbol_data_type::rhs_type::hash::operator ()(const rhs_type &item) const{
             std::size_t h = 0;
             for(auto iter = item.begin(), end = item.end(); iter != end; ++iter){
-                for(auto iiter = iter->first->value.value.begin(), eend = iter->first->value.value.end(); iiter != eend; ++iiter){
+                for(auto iiter = iter->first.value.value.begin(), eend = iter->first.value.value.end(); iiter != eend; ++iiter){
                     hash_combine(h, *iiter);
                 }
             }
@@ -341,8 +365,8 @@ namespace kp19pp{
             typedef scanner_type::token_type token_type;
             typedef scanner_type::semantic_type semantic_type;
             token_type join_token(const token_type &front, const token_type &back){
-                token_type t;
-                t.value = std::make_pair(front.value.begin(), front.value.end());
+                token_type t = front;
+                t.value = std::make_pair(front.value.begin(), back.value.end());
                 return t;
             }
 
@@ -361,6 +385,10 @@ namespace kp19pp{
                 data.type = symbol_type;
                 data.priority = priority;
                 return data;
+            }
+
+            token_type eat(const semantic_type::value_type &value, scanner_type &data){
+                return semantic_type::eat(value, data); // auto
             }
 
             std::pair<scanner_type::terminal_symbol_map_type::iterator, bool> insert_terminal_symbol(
@@ -384,10 +412,6 @@ namespace kp19pp{
                 return ret;
             }
 
-            token_type eat(const semantic_type::value_type &value, scanner_type &data){
-                return semantic_type::eat(value, data); // auto
-            }
-
             token_type identifier_seq_a(const semantic_type::value_type &value, scanner_type &data){
                 auto &identifier(value[0]);
                 auto &symbol_type(value[1]);
@@ -408,15 +432,15 @@ namespace kp19pp{
                 auto &template_arg(value[2]);
                 auto &nest_identifier(value[3]);
                 token_type r;
-                if(double_colon.value.begin() != double_colon.value.end()){
+                if(!double_colon.value.empty()){
                     r = double_colon;
                 }else{
                     r = identifier;
                 }
-                if(template_arg.value.begin() != template_arg.value.end()){
+                if(!template_arg.value.empty()){
                     r = join_token(r, template_arg);
                 }
-                if(nest_identifier.value.begin() != nest_identifier.value.end()){
+                if(!nest_identifier.value.empty()){
                     r = join_token(r, nest_identifier);
                 }
                 return r;
@@ -436,22 +460,24 @@ namespace kp19pp{
                 auto &template_arg(value[2]);
                 token_type r;
                 r = join_token(delim, identifier);
-                if(template_arg.value.begin() != template_arg.value.end()){
+                if(!template_arg.value.empty()){
                     r = join_token(r, template_arg);
                 }
                 return r;
             }
 
             token_type make_nest_identifier_b(const semantic_type::value_type &value, scanner_type &data){
-                auto &nest_identifier(value[0]);
-                auto &delim(value[1]);
-                auto &identifier(value[2]);
-                auto &template_arg(value[3]);
+                auto &delim(value[0]);
+                auto &identifier(value[1]);
+                auto &template_arg(value[2]);
+                auto &nest_identifier_rest(value[3]);
                 token_type r;
-                r = join_token(nest_identifier, delim);
-                r = join_token(r, identifier);
-                if(template_arg.value.begin() != template_arg.value.end()){
+                r = join_token(delim, identifier);
+                if(!template_arg.value.empty()){
                     r = join_token(r, template_arg);
+                }
+                if(!nest_identifier_rest.value.empty()){
+                    r = join_token(r, nest_identifier_rest);
                 }
                 return r;
             }
@@ -474,18 +500,21 @@ namespace kp19pp{
 
             token_type make_block_with_linkdir(const semantic_type::value_type &value, scanner_type &data){
                 auto comp = [](string_iter_pair_type pair, const char *str) -> bool{
-                    for(; ; ){
-                        bool a = pair.begin() == pair.end(), b = !*str;
-                        if(a && b){ break; }
-                        if(a ^ b || *pair.begin() != *str){ return false; }
-                        pair = string_iter_pair_type(pair.begin() + 1, pair.end());
-                        ++str;
+                    auto iter = pair.begin();
+                    const char *other_iter = str;
+                    for(; iter != pair.end(); ++iter, ++other_iter){
+                        if(*iter != *other_iter){
+                            return false;
+                        }
+                    }
+                    if(*other_iter != '\0'){
+                        return false;
                     }
                     return true;
                 };
                 auto &linkdir(value[0]);
                 scanner_type::terminal_symbol_linkdir linkdir_value;
-                if(linkdir.value.begin() == linkdir.value.end()){
+                if(linkdir.value.empty()){
                     linkdir_value = scanner_type::nonassoc;
                 }else{
                     if(comp(linkdir.value, "left")){
@@ -580,47 +609,45 @@ namespace kp19pp{
             }
 
             token_type insert_rhs_element(const token_type &identifier, const token_type &arg, const semantic_type::value_type &value, scanner_type &data){
-                scanner_type::symbol_type nonterminal_symbol = make_symbol(identifier, identifier.term);
-                scanner_type::terminal_symbol_data_type terminal_symbol_data;
-                std::pair<scanner_type::terminal_symbol_map_type::iterator, bool> find_ret_terminal_symbol;
-                std::pair<scanner_type::nonterminal_symbol_map_type::iterator, bool> find_ret_nonterminal_symbol;
-                find_ret_terminal_symbol.first = data.terminal_symbol_map.find(make_symbol(identifier, identifier.term));
-                find_ret_nonterminal_symbol.first = data.nonterminal_symbol_map.find(make_symbol(identifier, identifier.term));
-                std::pair<scanner_type::nonterminal_symbol_map_type::iterator, bool> undefined_nonterminal_symbol_iter;
+                scanner_type::symbol_type symbol = make_symbol(identifier, identifier.term);
+                scanner_type::terminal_symbol_map_type::const_iterator
+                    find_ret_terminal_symbol = data.terminal_symbol_map.find(symbol);
+                scanner_type::nonterminal_symbol_map_type::const_iterator
+                    find_ret_nonterminal_symbol = data.nonterminal_symbol_map.find(symbol),
+                    undefined_nonterminal_symbol_iter;
                 bool z = true, w = false;
-                if(find_ret_terminal_symbol.first == data.terminal_symbol_map.end()){
-                    z = find_ret_nonterminal_symbol.first == data.nonterminal_symbol_map.end();
+                if(find_ret_terminal_symbol == data.terminal_symbol_map.end()){
+                    z = find_ret_nonterminal_symbol == data.nonterminal_symbol_map.end();
                     if(z){
                         w = true;
-                        scanner_type::nonterminal_symbol_data_type nonterminal_symbol_data;
-                        scanner_type::symbol_type symbol = make_symbol(identifier, data.next_nonterminal_symbol_id());
-                        find_ret_nonterminal_symbol = undefined_nonterminal_symbol_iter =
-                            data.nonterminal_symbol_map.insert(std::make_pair(nonterminal_symbol, nonterminal_symbol_data));
-                        scanner_type::symbol_type undefined_nonterminal_symbol;
-                        undefined_nonterminal_symbol.value = undefined_nonterminal_symbol_iter.first->first.value;
-                        data.undefined_nonterminal_symbol_set.insert(undefined_nonterminal_symbol);
+                        scanner_type::symbol_type nonterminal_symbol = make_symbol(identifier, data.next_nonterminal_symbol_id());
+                        auto insert_ret = data.nonterminal_symbol_map.insert(std::make_pair(nonterminal_symbol, scanner_type::nonterminal_symbol_data_type()));
+                        auto &insert_ret_symbol(insert_ret.first->first);
+                        auto &insert_ret_data(insert_ret.first->second);
+                        find_ret_nonterminal_symbol = undefined_nonterminal_symbol_iter = insert_ret.first;
+                        data.undefined_nonterminal_symbol_set.insert(undefined_nonterminal_symbol_iter->first);
                     }
                 }
-                auto append_arg = [&](const std::string &str_arg_index, const scanner_type::symbol_type &ret_token_symbol) -> void{
+                auto append_arg = [&](const std::string &str_arg_index, const token_type &arg) -> void{
                     int arg_index = std::atoi(str_arg_index.c_str());
                     scanner_type::nonterminal_symbol_data_type::rhs_type &rhs(data.current_rhs);
                     if(rhs.argindex_max < arg_index){ rhs.argindex_max = arg_index; }
-                    auto ret_argindex_insert = rhs.argindex_to_symbol_map.insert(std::make_pair(arg_index, &ret_token_symbol));
+                    auto ret_argindex_insert = rhs.argindex_to_symbol_map.insert(std::make_pair(arg_index, std::make_pair(symbol, arg)));
                     if(!ret_argindex_insert.second){
                         throw(
                             exception(
                                 "'" +
-                                std::string(nonterminal_symbol.value.value.begin(), nonterminal_symbol.value.value.end()) +
+                                std::string(arg.value.begin(), arg.value.end()) +
                                 "' 引数が重複しています.",
-                                nonterminal_symbol.value.char_num,
-                                nonterminal_symbol.value.line_num
+                                arg.char_num,
+                                arg.line_num
                             )
                         );
                     }
                 };
-                if(arg.value.begin() != arg.value.end()){
-                    if(find_ret_terminal_symbol.first != data.terminal_symbol_map.end()){
-                        auto &type(terminal_symbol_data.type);
+                if(!arg.value.empty()){
+                    if(find_ret_terminal_symbol != data.terminal_symbol_map.end()){
+                        auto &type(find_ret_terminal_symbol->second.type);
                         if(type.value.empty()){
                             throw(
                                 exception(
@@ -633,38 +660,23 @@ namespace kp19pp{
                             );
                         }
                         std::string str_arg_index(arg.value.begin(), arg.value.end());
-                        append_arg(str_arg_index, find_ret_terminal_symbol.first->first);
+                        append_arg(str_arg_index, arg);
                     }else{
-                        auto &ret_token_symbol(find_ret_nonterminal_symbol.first->first);
-                        if(arg.value.begin() != arg.value.end()){
+                        if(!arg.value.empty()){
                             std::string arg_str_index(arg.value.begin(), arg.value.end());
-                            append_arg(arg_str_index, find_ret_nonterminal_symbol.first->first);
+                            append_arg(arg_str_index, arg);
                         }
                     }
-                    const scanner_type::symbol_type *symbol_identifier;
-                    scanner_type::symbol_type symbol_arg;
-                    if(w){
-                        symbol_identifier = &undefined_nonterminal_symbol_iter.first->first;
-                    }else if(z){
-                        symbol_identifier = &find_ret_terminal_symbol.first->first;
-                    }else{
-                        symbol_identifier = &find_ret_nonterminal_symbol.first->first;
-                    }
+                    scanner_type::symbol_type identifier_symbol, symbol_arg;
+                    identifier_symbol.value = identifier;
                     symbol_arg.value = arg;
-                    data.current_rhs.push_back(std::make_pair(symbol_identifier, static_cast<scanner_type::symbol_type&>(symbol_arg)));
+                    data.current_rhs.push_back(std::make_pair(identifier_symbol, symbol_arg));
                     return join_token(identifier, arg);
                 }else{
-                    const scanner_type::symbol_type *symbol_identifier;
-                    if(w){
-                        symbol_identifier = &undefined_nonterminal_symbol_iter.first->first;
-                    }else if(z){
-                        symbol_identifier = &find_ret_terminal_symbol.first->first;
-                    }else{
-                        symbol_identifier = &find_ret_nonterminal_symbol.first->first;
-                    }
-                    scanner_type::symbol_type dummy_arg;
+                    scanner_type::symbol_type identifier_symbol, dummy_arg;
+                    identifier_symbol.value = identifier;
                     dummy_arg.value = eat(value, data);
-                    data.current_rhs.push_back(std::make_pair(symbol_identifier, dummy_arg));
+                    data.current_rhs.push_back(std::make_pair(identifier_symbol, dummy_arg));
                     return identifier;
                 }
             }
@@ -689,19 +701,30 @@ namespace kp19pp{
                     throw(
                         exception(
                             "規則の多重定義を検出しました.",
-                            rhs.front().first->value.char_num,
-                            rhs.front().first->value.line_num
+                            data.current_rhs.front().first.value.char_num,
+                            data.current_rhs.front().first.value.line_num
                         )
                     );
                 }
                 if(!rhs.empty()){
                     for(int i = 0, n = rhs.argindex_max; i <= n; ++i){
                         if(rhs.argindex_to_symbol_map.find(i) == rhs.argindex_to_symbol_map.end()){
+                            scanner_type::nonterminal_symbol_data_type::rhs_type::argindex_to_symbol_map_type::const_iterator iter;
+                            int j = i + 1;
+                            for(; j < n; ++j){
+                                iter = rhs.argindex_to_symbol_map.find(j);
+                                if(iter == rhs.argindex_to_symbol_map.end()){
+                                    continue;
+                                }
+                            }
+                            if(j == n){
+                                iter = rhs.argindex_to_symbol_map.find(n);
+                            }
                             throw(
                                 exception(
                                     "規則内での引数が連続していません.",
-                                    data.current_rhs.begin()->first->value.char_num,
-                                    data.current_rhs.end()->first->value.line_num
+                                    iter->second.second.char_num,
+                                    iter->second.second.line_num
                                 )
                             );
                         }
@@ -1261,6 +1284,7 @@ namespace kp19pp{
             }
 
             {
+                /*
                 // ログを残す
                 std::ofstream parsing_log("parsing_log.txt");
                 auto put_fn = [&](const item_type &item) -> void{
@@ -1282,12 +1306,13 @@ namespace kp19pp{
                         << "\n";
                     throw(exception("grammar error. '" + term_to_str(iter->term) + "'.", iter->char_num, iter->line_num));
                 };
-
-                /*
-                //ログを残さない
-                auto put_fn = [](const traits::item_type&) -> void{};
-                auto error_fn = [](const token_seq_type::iterator &iter) -> void{ throw(exception("parsing error.", iter->char_num, iter->line_num)); };
                 */
+
+                //ログを残さない
+                auto put_fn = [](const item_type&) -> void{  };
+                auto error_fn = [](const token_seq_type::const_iterator &iter) -> void{
+                    throw(exception("構文エラー.", iter->char_num, iter->line_num));
+                };
 
                 parse(put_fn, error_fn);
             }

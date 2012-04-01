@@ -30,6 +30,12 @@ namespace kp19pp{
             string_iter_pair_type(scanner_string_type::const_iterator first, scanner_string_type::const_iterator last);
             string_iter_pair_type &operator =(const string_iter_pair_type &other);
             string_iter_pair_type &operator =(std::pair<scanner_string_type::const_iterator, scanner_string_type::const_iterator>);
+            bool operator ==(const string_iter_pair_type &other) const;
+
+        private:
+            static scanner_string_type &dummy_strage();
+
+        public:
             struct hash{
                 std::size_t operator ()(const string_iter_pair_type &item) const;
             };
@@ -101,11 +107,9 @@ namespace kp19pp{
                 nonterminal_symbol_data_type(const nonterminal_symbol_data_type &other);
                 token_type type;
 
-                // first_type == rhs element
-                // second_type == argument
-                class rhs_type : public std::vector<std::pair<const symbol_type*, symbol_type>>{
+                class rhs_type : public std::vector<std::pair<symbol_type, symbol_type>>{
                 private:
-                    typedef std::vector<std::pair<const symbol_type*, symbol_type>> base_type;
+                    typedef std::vector<std::pair<symbol_type, symbol_type>> base_type;
 
                 public:
                     rhs_type();
@@ -115,7 +119,8 @@ namespace kp19pp{
                     void clear();
                     token_type semantic_action, tag;
                     std::size_t number;
-                    std::map<int, const symbol_type*> argindex_to_symbol_map;
+                    typedef std::map<int, std::pair<symbol_type, token_type>> argindex_to_symbol_map_type;
+                    argindex_to_symbol_map_type argindex_to_symbol_map;
                     int argindex_max;
                     struct hash{
                         std::size_t operator ()(const rhs_type &item) const;
