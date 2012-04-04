@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 #include <utility>
-#include <boost/range.hpp>
 #include "kp19pp.hpp"
+#include "common.hpp"
 
 namespace kp19pp{
     namespace scanner{
@@ -18,30 +18,8 @@ namespace kp19pp{
             term_type operator ()() const;
         };
 
-        typedef std::vector<char> scanner_string_type;
-        class string_iter_pair_type : public boost::iterator_range<scanner_string_type::const_iterator>{
-        private:
-            typedef boost::iterator_range<scanner_string_type::const_iterator> base_type;
-
-        public:
-            string_iter_pair_type();
-            string_iter_pair_type(const string_iter_pair_type &other);
-            string_iter_pair_type(string_iter_pair_type &&other);
-            string_iter_pair_type(scanner_string_type::const_iterator first, scanner_string_type::const_iterator last);
-            string_iter_pair_type &operator =(const string_iter_pair_type &other);
-            string_iter_pair_type &operator =(std::pair<scanner_string_type::const_iterator, scanner_string_type::const_iterator>);
-            bool operator ==(const string_iter_pair_type &other) const;
-
-        private:
-            static scanner_string_type &dummy_strage();
-
-        public:
-            struct hash{
-                std::size_t operator ()(const string_iter_pair_type &item) const;
-            };
-        };
-
         extern const scanner_string_type dummy_string;
+
         class scanner_type;
         struct semantic_type{
             typedef basic_token_type<string_iter_pair_type, term_type> token_type;
@@ -60,7 +38,7 @@ namespace kp19pp{
             string_iter_pair_type,
             term_type,
             semantic_type,
-            end_of_seq_functor, 
+            end_of_seq_functor,
             epsilon_functor
         >{
         private:
@@ -68,7 +46,7 @@ namespace kp19pp{
                 string_iter_pair_type,
                 term_type,
                 semantic_type,
-                end_of_seq_functor, 
+                end_of_seq_functor,
                 epsilon_functor
             > base_type;
 
@@ -127,7 +105,8 @@ namespace kp19pp{
                     };
                 };
                 
-                std::unordered_set<rhs_type, rhs_type::hash> rhs;
+                typedef std::unordered_set<rhs_type, rhs_type::hash> rhs_set_type;
+                rhs_set_type rhs;
             };
 
             typedef std::unordered_map<
@@ -152,6 +131,7 @@ namespace kp19pp{
         public:
             scanner_type();
             void scan(std::istream &in);
+            void make_target();
             term_type next_terminal_symbol_id();
             term_type next_nonterminal_symbol_id();
             std::size_t next_rhs_number();
@@ -160,7 +140,7 @@ namespace kp19pp{
             void set_scanned_first_nonterminal_symbol();
 
         private:
-            static void define_grammar();
+            static void define_grammar(scanner_type &scanner);
             void check_undefined_nonterminal_symbol();
             void check_linked_nonterminal_symbol();
             void normalize_token_order();
@@ -188,8 +168,6 @@ namespace kp19pp{
             std::size_t         current_rhs_number;
             bool                scanned_first_nonterminal_symbol;
         };
-
-        extern scanner_type scanner;
     }
 }
 

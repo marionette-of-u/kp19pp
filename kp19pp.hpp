@@ -15,16 +15,18 @@
 #include <fstream>
 #include <climits>
 #include <boost/timer.hpp>
+// #include <boost/functional/hash.hpp>
 
 namespace kp19pp{
     template<class Type>
     inline void hash_combine(std::size_t &h, const Type &value){
         // XOR combine
         h = h ^ std::hash<Type>()(value);
+        // boost::hash_combine(h, value);
     }
 
-    // ä¸ãˆã‚‰ã‚ŒãŸã‚·ãƒ³ãƒœãƒ«ãŒéçµ‚ç«¯è¨˜å·ã‹ã‚’åˆ¤å®šã™ã‚‹ functor
-    // default ã¯ set ã‹ã‚‰æ¤œç´¢ã™ã‚‹ã ã‘
+    // —^‚¦‚ç‚ê‚½ƒVƒ“ƒ{ƒ‹‚ª”ñI’[‹L†‚©‚ğ”»’è‚·‚é functor
+    // default ‚Í set ‚©‚çŒŸõ‚·‚é‚¾‚¯
     template<class ExpressionSetType>
     struct default_is_not_terminal{
         bool operator ()(
@@ -36,8 +38,8 @@ namespace kp19pp{
         }
     };
 
-    // term ã‚’äººé–“ãŒèª­ã‚ã‚‹å½¢å¼ã«å¤‰æ›ã™ã‚‹
-    // default ã¯å€¤ã‚’ãã®ã¾ã¾è¿”ã™ã ã‘
+    // term ‚ğlŠÔ‚ª“Ç‚ß‚éŒ`®‚É•ÏŠ·‚·‚é
+    // default ‚Í’l‚ğ‚»‚Ì‚Ü‚Ü•Ô‚·‚¾‚¯
     template<class TermType>
     struct default_term_to_str{
         const TermType &operator ()(const TermType &term) const{
@@ -271,7 +273,7 @@ namespace kp19pp{
             term_type lhs;
             const typename expression_type::rhs_type *rhs;
             std::size_t pos;
-            // å…ˆèª­ã¿è¨˜å·ã¯ãƒãƒƒãƒãƒ³ã‚°ã«å½±éŸ¿ã—ãªã„
+            // æ“Ç‚İ‹L†‚Íƒ}ƒbƒ`ƒ“ƒO‚É‰e‹¿‚µ‚È‚¢
             mutable std::set<term_type> lookahead;
         };
 
@@ -471,9 +473,9 @@ namespace kp19pp{
                 linkdir(other.linkdir), priority(other.priority)
             {}
 
-            // çµåˆæ–¹å‘
-            terminal_symbol_linkdir linkdir;
-            // å„ªå…ˆé †ä½
+            // Œ‹‡•ûŒü
+            std::size_t linkdir;
+            // —Dæ‡ˆÊ
             std::size_t priority;
         };
 
@@ -561,7 +563,7 @@ namespace kp19pp{
             boost::timer alltime;
             alltime.restart();
 
-            // éçµ‚ç«¯è¨˜å·ã®ãƒ‡ãƒ¼ã‚¿ã‚’åé›†
+            // ”ñI’[‹L†‚Ìƒf[ƒ^‚ğûW
             {
                 nonterminal_symbol_map.insert(start_prime.lhs);
                 for(auto iter = expression_set.begin(), end = expression_set.end(); iter != end; ++iter){
@@ -573,7 +575,7 @@ namespace kp19pp{
 
             boost::timer t;
 
-            // FIRST é›†åˆã‚’æ§‹ç¯‰ã™ã‚‹
+            // FIRST W‡‚ğ\’z‚·‚é
             t.restart();
             fset_type first_set;
             make_first_set(first_set, expression_set, nonterminal_symbol_map, is_not_terminal);
@@ -586,7 +588,7 @@ namespace kp19pp{
             typename items_set_type::iterator first_items_iter;
             item_type i;
 
-            //LR(0)é …é›†åˆã‚’æ±‚ã‚ã‚‹
+            //LR(0)€W‡‚ğ‹‚ß‚é
             t.restart();
             {
                 item_set_type init;
@@ -600,7 +602,7 @@ namespace kp19pp{
                 std::cout << "lr0 items :\n  " << t.elapsed() << "sec\n";
             }
 
-            // LR(0) ä¸»è¦é …ã‚’æ±‚ã‚ã‚‹
+            // LR(0) å—v€‚ğ‹‚ß‚é
             t.restart();
             i.lhs = start_prime.lhs;
             i.rhs = &*start_prime.rhs.begin();
@@ -611,7 +613,7 @@ namespace kp19pp{
                 std::cout << "lr0 main items :\n  " << t.elapsed() << "sec\n";
             }
 
-            // è¡Œãå…ˆé–¢æ•° goto ã‚’ map åŒ–ã™ã‚‹
+            // s‚«æŠÖ” goto ‚ğ map ‰»‚·‚é
             t.restart();
             make_goto_map(
                 slr_items_set,
@@ -626,14 +628,14 @@ namespace kp19pp{
                 std::cout << "make goto-fn map :\n  " << t.elapsed() << "sec\n";
             }
 
-            // LR(0) ä¸»è¦é …é›†åˆã‚’ LALR(1) åŒ–ã™ã‚‹
+            // LR(0) å—v€W‡‚ğ LALR(1) ‰»‚·‚é
             t.restart();
             decision_lookahead(items_set, first_items_iter, expression_set, first_set, dummy_term, eos_functor_type()(), is_not_terminal);
             if(option.put_time){
                 std::cout << "decision lookahead :\n  " << t.elapsed() << "sec\n";
             }
 
-            // çŠ¶æ…‹ã®å‡ºåŠ›
+            // ó‘Ô‚Ìo—Í
             if(option.put_log){
                 std::ofstream ofile("main_items.txt");
                 if(ofile){
@@ -641,15 +643,15 @@ namespace kp19pp{
                 }
             }
 
-            // ã‚«ãƒ¼ãƒãƒ«ã‚’é–‰ã˜ã‚‹
+            // ƒJ[ƒlƒ‹‚ğ•Â‚¶‚é
             t.restart();
-            slr_items_set.clear(); // ã“ã“ã§ mirror ã¯ç„¡åŠ¹ã«ãªã‚‹
+            slr_items_set.clear(); // ‚±‚±‚Å mirror ‚Í–³Œø‚É‚È‚é
             first_items_iter = closing_kernel(items_set, first_items_iter, expression_set, first_set, is_not_terminal);
             if(option.put_time){
                 std::cout << "closing kernel :\n  " << t.elapsed() << "sec\n";
             }
 
-            // ã‚«ãƒ¼ãƒãƒ«ã‚’é–‰ã˜ãŸçŠ¶æ…‹ã®å‡ºåŠ›
+            // ƒJ[ƒlƒ‹‚ğ•Â‚¶‚½ó‘Ô‚Ìo—Í
             if(option.put_log){
                 std::ofstream ofile("items.txt");
                 if(ofile){
@@ -657,7 +659,7 @@ namespace kp19pp{
                 }
             }
 
-            // è§£æè¡¨ã‚’æ§‹ç¯‰ã™ã‚‹
+            // ‰ğÍ•\‚ğ\’z‚·‚é
             t.restart();
             make_action_table(
                 items_set,
@@ -719,8 +721,8 @@ namespace kp19pp{
             parsing_table.resize(state_num);
 
             terminal_symbol_linkdir ref_nonassoc(nonassoc);
-            auto rhs_priority = [&](const typename expression_type::rhs_type *rhs) -> std::pair<std::size_t, terminal_symbol_linkdir>{
-                std::pair<std::size_t, terminal_symbol_linkdir> p = std::make_pair(0, ref_nonassoc);
+            auto rhs_priority = [&](const typename expression_type::rhs_type *rhs) -> std::pair<std::size_t, std::size_t>{
+                std::pair<std::size_t, std::size_t> p = std::make_pair(0, ref_nonassoc);
                 for(auto iter = rhs->rbegin(), end = rhs->rend(); iter != end; ++iter){
                     const term_type &term(*iter);
                     if(!is_not_terminal(expression_set, term)){
@@ -738,7 +740,7 @@ namespace kp19pp{
             };
 
             // !!
-            // g++ 4.7.0 ã ã¨ slr_goto ãŒã‚­ãƒ£ãƒ—ãƒãƒ£ã•ã‚Œãªã„
+            // g++ 4.7.0 ‚¾‚Æ slr_goto ‚ªƒLƒƒƒvƒ`ƒƒ‚³‚ê‚È‚¢
             void (*ref_slr_goto)(
                 item_set_type&,
                 const expression_set_type&,
@@ -771,7 +773,7 @@ namespace kp19pp{
                             }else{
                                 if(option.avoid_conflict){
                                     // !!
-                                    // MSVCã§ std::pair<std::size_t, terminal_symbol_linkdir> ã«ã™ã‚‹ã¨ error C2273 ãŒç™ºç”Ÿ
+                                    // MSVC‚Å std::pair<std::size_t, terminal_symbol_linkdir> ‚É‚·‚é‚Æ error C2273 ‚ª”­¶
                                     std::pair<std::size_t, std::size_t> p, q;
                                     auto tag_p = act.item->rhs->tag();
                                     if(tag_p == epsilon){
@@ -816,7 +818,7 @@ namespace kp19pp{
                         if(!ret.second){
                             auto &other_act(ret.first->second);
                             if(other_act.first == action_reduce){
-                                std::pair<std::size_t, terminal_symbol_linkdir> p;
+                                std::pair<std::size_t, std::size_t> p;
                                 auto tag = act.item->rhs->tag();
                                 if(tag == epsilon){
                                     auto &x(terminal_data_map.find(tag)->second);
@@ -1064,7 +1066,7 @@ namespace kp19pp{
             for(auto item_set_iter = items_set.begin(), item_set_end = items_set.end(); item_set_iter != item_set_end; ++item_set_iter){
                 auto &item_set(*item_set_iter);
                 // !!
-                // MSVC10 ã ã¨ slr_goto ãŒã‚­ãƒ£ãƒ—ãƒãƒ£ã•ã‚Œãªã„
+                // MSVC10 ‚¾‚Æ slr_goto ‚ªƒLƒƒƒvƒ`ƒƒ‚³‚ê‚È‚¢
                 void (*ref_slr_goto)(
                     item_set_type&,
                     const expression_set_type&,
@@ -1073,7 +1075,7 @@ namespace kp19pp{
                     const IsNotTerminal&
                 ) = slr_goto;
                 // !!
-                // gcc 4.7.0 ã ã¨ main_items ãŒã‚­ãƒ£ãƒ—ãƒãƒ£ã•ã‚Œãªã„
+                // gcc 4.7.0 ‚¾‚Æ main_items ‚ªƒLƒƒƒvƒ`ƒƒ‚³‚ê‚È‚¢
                 auto ref_main_items(main_items);
                 auto fn = [&](const term_set_type &symbol_set){
                     for(auto term_iter = symbol_set.begin(), term_end = symbol_set.end(); term_iter != term_end; ++term_iter){
@@ -1195,7 +1197,7 @@ namespace kp19pp{
                 for(auto item_set_iter = result.begin(), item_set_end = result.end(); item_set_iter != item_set_end; ++item_set_iter){
                     auto &item_set(*item_set_iter);
                     // !!
-                    // MSVC10ã ã¨slr_gotoãŒã‚­ãƒ£ãƒ—ãƒãƒ£ã•ã‚Œãªã„
+                    // MSVC10‚¾‚Æslr_goto‚ªƒLƒƒƒvƒ`ƒƒ‚³‚ê‚È‚¢
                     void (*ref_slr_goto)(
                         item_set_type&,
                         const expression_set_type&,

@@ -1,15 +1,17 @@
 #include <iostream>
 #include "exception.hpp"
 #include "scanner.hpp"
+#include "target.hpp"
 
 int main(){
-    std::ifstream ifile("ifile.txt");
-    if(!ifile){
-        std::cerr << "繝輔ぃ繧､繝ｫ縺ｮ隱ｭ縺ｿ霎ｼ縺ｿ縺ｫ螟ｱ謨励＠縺ｾ縺励◆.\n";
-        return -1;
-    }
     try{
-        kp19pp::scanner::scanner.scan(ifile);
+        std::ifstream ifile("ifile.txt");
+        if(!ifile){
+            std::cerr << "ファイルの読み込みに失敗しました.\n";
+            return -1;
+        }
+        kp19pp::scanner::scanner_type scanner;
+        scanner.scan(ifile);
     }catch(kp19pp::exception e){
         std::cerr << "error " << (e.line_num + 1) << ":" << (e.char_num + 1) << ":" << e.what() << "\n";
         return -1;
@@ -20,11 +22,11 @@ int main(){
         }
         return -1;
     }catch(...){
-        std::cerr << "譛ｪ遏･縺ｮ繧ｨ繝ｩ繝ｼ縺檎匱逕溘＠縺ｾ縺励◆.\n";
+        std::cerr << "未知のエラーが発生しました.\n";
         return -1;
     }
 
-    std::cout << "豁｣蟶ｸ邨ゆｺ�.\n";
+    std::cout << "正常終了.\n";
 
     return 0;
 }

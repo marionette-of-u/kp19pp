@@ -1,6 +1,6 @@
 #if    defined(_MSC_VER) && (_MSC_VER >= 1400)
     // !!
-    // boost::spirit::qiä½¿ç”¨æ™‚ã«å‡ºã¦ãã‚‹é–¢æ•°ã«å¯¾ã™ã‚‹const/volatileä¿®é£¾å­ç„¡åŠ¹ã®è­¦å‘Šã‚’æŠ‘åˆ¶ã™ã‚‹.
+    // boost::spirit::qig—p‚Éo‚Ä‚­‚éŠÖ”‚É‘Î‚·‚éconst/volatileCüq–³Œø‚ÌŒx‚ğ—}§‚·‚é.
 #    pragma warning(disable:4180)
 #endif
 
@@ -22,6 +22,7 @@
 #include <boost/spirit/include/qi_parse.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
 #include "scanner.hpp"
+#include "target.hpp"
 #include "exception.hpp"
 
 namespace kp19pp{
@@ -32,56 +33,6 @@ namespace kp19pp{
 
         term_type end_of_seq_functor::operator ()() const{
             return (std::numeric_limits<int>::max)();
-        }
-
-        string_iter_pair_type::string_iter_pair_type() :
-            base_type(dummy_strage().begin(), dummy_strage().end())
-        {}
-
-        string_iter_pair_type::string_iter_pair_type(const string_iter_pair_type &other) :
-            base_type(other)
-        {}
-        
-        string_iter_pair_type::string_iter_pair_type(string_iter_pair_type &&other) :
-            base_type(other)
-        {}
-        
-        string_iter_pair_type::string_iter_pair_type(
-            scanner_string_type::const_iterator first,
-            scanner_string_type::const_iterator last
-        ) :
-            base_type(first, last)
-        {}
-
-        string_iter_pair_type &string_iter_pair_type::operator =(const string_iter_pair_type &other){
-            base_type::operator =(other);
-            return *this;
-        }
-
-        string_iter_pair_type &string_iter_pair_type::operator =(std::pair<scanner_string_type::const_iterator, scanner_string_type::const_iterator> pair){
-            base_type::operator =(pair);
-            return *this;
-        }
-
-        bool string_iter_pair_type::operator ==(const string_iter_pair_type &other) const{
-            if(size() != other.size()){ return false; }
-            for(auto iter = begin(), other_iter = other.begin(); iter != end(); ++iter, ++other_iter){
-                if(*iter != *other_iter){ return false; }
-            }
-            return true;
-        }
-
-        scanner_string_type &string_iter_pair_type::dummy_strage(){
-            static scanner_string_type dummy;
-            return dummy;
-        }
-
-        std::size_t string_iter_pair_type::hash::operator ()(const string_iter_pair_type &item) const{
-            std::size_t h = 0;
-            for(auto iter = item.begin(), end = item.end(); iter != end; ++iter){
-                hash_combine(h, *iter);
-            }
-            return h;
         }
 
         const scanner_string_type dummy_string;
@@ -193,7 +144,7 @@ namespace kp19pp{
             tag.value = string_iter_pair_type(dummy_string.begin(), dummy_string.end());
             number = std::size_t();
             argindex_to_symbol_map.clear();
-            argindex_max = 0;
+            argindex_max = -1;
         }
             
         std::size_t scanner_type::nonterminal_symbol_data_type::rhs_type::hash::operator ()(const rhs_type &item) const{
@@ -222,7 +173,7 @@ namespace kp19pp{
         }
 
         term_type scanner_type::next_nonterminal_symbol_id(){
-            return current_nonterminal_symbol_id++;
+            return -(current_nonterminal_symbol_id++);
         }
 
         std::size_t scanner_type::next_rhs_number(){
@@ -243,7 +194,7 @@ namespace kp19pp{
 
         void scanner_type::check_undefined_nonterminal_symbol(){
             if(undefined_nonterminal_symbol_set.empty()){ return; }
-            exception_seq e("å®šç¾©ã•ã‚Œã¦ã„ãªã„è¨˜å·ã§ã™.");
+            exception_seq e("’è‹`‚³‚ê‚Ä‚¢‚È‚¢‹L†‚Å‚·.");
             for(
                 auto iter = undefined_nonterminal_symbol_set.begin(), end = undefined_nonterminal_symbol_set.end();
                 iter != end;
@@ -281,7 +232,7 @@ namespace kp19pp{
                 &nonterminal_symbol_map.find(first_nonterminal_symbol)->first,
                 &nonterminal_symbol_map[first_nonterminal_symbol]
             );
-            exception_seq e("ä½¿ã‚ã‚Œãªã„éçµ‚ç«¯è¨˜å·ã‚’æ¤œå‡ºã—ã¾ã—ãŸ.");
+            exception_seq e("g‚í‚ê‚È‚¢”ñI’[‹L†‚ğŒŸo‚µ‚Ü‚µ‚½.");
             for(auto iter = nonterminal_symbol_map.begin(), end = nonterminal_symbol_map.end(); iter != end; ++iter){
                 auto ptr(&iter->first);
                 if(scanned_nonterminal_symbol_set.find(ptr) == scanned_nonterminal_symbol_set.end()){
@@ -312,18 +263,18 @@ namespace kp19pp{
         }
 
         term_type dummy_term = (std::numeric_limits<int>::max)() - 1;
-        scanner_type scanner;
         std::unordered_map<term_type, std::string> term_to_str_map;
         namespace terminal_symbol{
             namespace aux{
                 int current_terminal_symbol_id = 1;
+                std::vector<term_type> terminal_symbol_data;
             }
 #define DECL(name) \
     scanner_type::term_type name; \
     struct BOOST_PP_CAT(name, _initializer_type){ \
         BOOST_PP_CAT(name, _initializer_type)(){ \
             name = aux::current_terminal_symbol_id++; \
-            scanner.add_terminal_symbol(name, scanner_type::symbol_data_type()); \
+            aux::terminal_symbol_data.push_back(name); \
             term_to_str_map[name] = BOOST_PP_STRINGIZE(name); \
         } \
     } BOOST_PP_CAT(name, _initializer);
@@ -346,14 +297,14 @@ namespace kp19pp{
 #undef DECL
             struct epsilon_initializer_type{
                 epsilon_initializer_type(){
-                    scanner.add_terminal_symbol(epsilon_functor()(), scanner_type::symbol_data_type());
+                    aux::terminal_symbol_data.push_back(epsilon_functor()());
                     term_to_str_map[epsilon_functor()()] = "epsilon";
                 }
             } epsilon_initializer;
 
             struct end_of_seq_initializer_type{
                 end_of_seq_initializer_type(){
-                    scanner.add_terminal_symbol(end_of_seq_functor()(), scanner_type::symbol_data_type());
+                    aux::terminal_symbol_data.push_back(end_of_seq_functor()());
                     term_to_str_map[epsilon_functor()()] = "$";
                 }
             } end_of_seq_initializer;
@@ -451,7 +402,7 @@ namespace kp19pp{
                         exception(
                             "'" +
                             std::string(symbol.value.value.begin(), symbol.value.value.end()) +
-                            "' ãƒˆãƒ¼ã‚¯ãƒ³ã®å¤šé‡å®šç¾©ã§ã™.",
+                            "' ƒg[ƒNƒ“‚Ì‘½d’è‹`‚Å‚·.",
                             symbol.value.char_num,
                             symbol.value.line_num
                         )
@@ -577,7 +528,7 @@ namespace kp19pp{
                             exception(
                                 "'" +
                                 std::string(linkdir.value.begin(), linkdir.value.end()) +
-                                "' çµ‚ç«¯è¨˜å·ã®çµåˆæ–¹å‘ãŒ 'left', 'right', 'nonassoc' ã®ã„ãšã‚Œã§ã‚‚ã‚ã‚Šã¾ã›ã‚“.",
+                                "' I’[‹L†‚ÌŒ‹‡•ûŒü‚ª 'left', 'right', 'nonassoc' ‚Ì‚¢‚¸‚ê‚Å‚à‚ ‚è‚Ü‚¹‚ñ.",
                                 linkdir.char_num,
                                 linkdir.line_num
                             )
@@ -647,7 +598,7 @@ namespace kp19pp{
                         exception(
                             "'" +
                             std::string(tag.value.begin(), tag.value.end()) +
-                            "' ã‚¿ã‚°ãŒçµ‚ç«¯è¨˜å·ã§ã¯ã‚ã‚Šã¾ã›ã‚“.",
+                            "' ƒ^ƒO‚ªI’[‹L†‚Å‚Í‚ ‚è‚Ü‚¹‚ñ.",
                             tag.char_num,
                             tag.line_num
                         )
@@ -687,7 +638,7 @@ namespace kp19pp{
                             exception(
                                 "'" +
                                 std::string(arg.value.begin(), arg.value.end()) +
-                                "' å¼•æ•°ãŒé‡è¤‡ã—ã¦ã„ã¾ã™.",
+                                "' ˆø”‚ªd•¡‚µ‚Ä‚¢‚Ü‚·.",
                                 arg.char_num,
                                 arg.line_num
                             )
@@ -702,7 +653,7 @@ namespace kp19pp{
                                 exception(
                                     "'" +
                                     std::string(identifier.value.begin(), identifier.value.end()) +
-                                    "' å¼•æ•°ã¨ãªã‚‹è¨˜å·ã«å‹ãŒã‚ã‚Šã¾ã›ã‚“.",
+                                    "' ˆø”‚Æ‚È‚é‹L†‚ÉŒ^‚ª‚ ‚è‚Ü‚¹‚ñ.",
                                     identifier.char_num,
                                     identifier.line_num
                                 )
@@ -742,41 +693,61 @@ namespace kp19pp{
                 return value[0];
             }
 
-            token_type make_rhs(const semantic_type::value_type &value, scanner_type &data){
+            const scanner_type::nonterminal_symbol_data_type::rhs_type &insert_rhs(scanner_type &data){
+                if(data.current_rhs.empty() && !data.current_rhs.semantic_action.value.empty()){
+                    throw(
+                        exception(
+                            "epsilon¶¬‹K‘¥‚ÉƒZƒ}ƒ“ƒeƒBƒbƒNƒAƒNƒVƒ‡ƒ“‚ª‘¶İ‚µ‚Ü‚·.",
+                            data.current_rhs.semantic_action.char_num,
+                            data.current_rhs.semantic_action.line_num
+                        )
+                    );
+                }else if(!data.current_rhs.empty() && data.current_rhs.semantic_action.value.empty()){
+                    throw(
+                        exception(
+                            "ƒZƒ}ƒ“ƒeƒBƒbƒNƒAƒNƒVƒ‡ƒ“‚ª‚ ‚è‚Ü‚¹‚ñ.",
+                            data.current_rhs[0].first.value.char_num,
+                            data.current_rhs[0].first.value.line_num
+                        )
+                    );
+                }
                 data.current_rhs.number = data.next_rhs_number();
                 auto ret = data.current_nonterminal_symbol_iter->second.rhs.insert(data.current_rhs);
                 auto &rhs(*ret.first);
                 if(!ret.second){
                     throw(
                         exception(
-                            "è¦å‰‡ã®å¤šé‡å®šç¾©ã‚’æ¤œå‡ºã—ã¾ã—ãŸ.",
+                            "‹K‘¥‚Ì‘½d’è‹`‚ğŒŸo‚µ‚Ü‚µ‚½.",
                             data.current_rhs.front().first.value.char_num,
                             data.current_rhs.front().first.value.line_num
                         )
                     );
                 }
-                if(!rhs.empty()){
-                    for(int i = 0, n = rhs.argindex_max; i <= n; ++i){
-                        if(rhs.argindex_to_symbol_map.find(i) == rhs.argindex_to_symbol_map.end()){
-                            scanner_type::nonterminal_symbol_data_type::rhs_type::argindex_to_symbol_map_type::const_iterator iter;
-                            int j = i + 1;
-                            for(; j < n; ++j){
-                                iter = rhs.argindex_to_symbol_map.find(j);
-                                if(iter == rhs.argindex_to_symbol_map.end()){
-                                    continue;
-                                }
+                return rhs; 
+            }
+
+            token_type make_rhs(const semantic_type::value_type &value, scanner_type &data){
+                auto &rhs(insert_rhs(data));
+                for(int i = 0, n = rhs.argindex_max; i <= n; ++i){
+                    if(rhs.argindex_to_symbol_map.find(i) == rhs.argindex_to_symbol_map.end()){
+                        scanner_type::nonterminal_symbol_data_type::rhs_type::argindex_to_symbol_map_type::const_iterator iter;
+                        int j = i + 1;
+                        for(; j < n; ++j){
+                            iter = rhs.argindex_to_symbol_map.find(j);
+                            if(iter == rhs.argindex_to_symbol_map.end()){
+                                continue;
                             }
-                            if(j == n){
-                                iter = rhs.argindex_to_symbol_map.find(n);
-                            }
-                            throw(
-                                exception(
-                                    "è¦å‰‡å†…ã§ã®å¼•æ•°ãŒé€£ç¶šã—ã¦ã„ã¾ã›ã‚“.",
-                                    iter->second.second.char_num,
-                                    iter->second.second.line_num
-                                )
-                            );
                         }
+                        if(j == n){
+                            iter = rhs.argindex_to_symbol_map.find(n);
+                        }
+                        throw(
+                            exception(
+                                "‹K‘¥“à‚Å‚Ìˆø”‚ª˜A‘±‚µ‚Ä‚¢‚Ü‚¹‚ñ.",
+                                iter->second.second.char_num,
+                                iter->second.second.line_num
+                            )
+                        );
                     }
                 }
                 data.current_rhs.clear();
@@ -803,13 +774,11 @@ namespace kp19pp{
                     scanner_type::terminal_symbol_data_type terminal_symbol_data;
                     scanner_type::symbol_type nonterminal_symbol = make_symbol(identifier, data.next_nonterminal_symbol_id());
                     scanner_type::nonterminal_symbol_data_type nonterminal_symbol_data;
-                    terminal_symbol.value = identifier;
-                    nonterminal_symbol.value = identifier;
                     nonterminal_symbol_data.type = type;
                     if(data.terminal_symbol_map.find(terminal_symbol) != data.terminal_symbol_map.end()){
                         throw(
                             exception(
-                                "'" + std::string(identifier.value.begin(), identifier.value.end()) + "' çµ‚ç«¯è¨˜å·ã¨éçµ‚ç«¯è¨˜å·ãŒè¡çªã—ã¾ã—ãŸ.",
+                                "'" + std::string(identifier.value.begin(), identifier.value.end()) + "' I’[‹L†‚Æ”ñI’[‹L†‚ªÕ“Ë‚µ‚Ü‚µ‚½.",
                                 identifier.char_num,
                                 identifier.line_num
                             )
@@ -819,7 +788,7 @@ namespace kp19pp{
                     if(!ret.second){
                         throw(
                             exception(
-                                "'" + std::string(identifier.value.begin(), identifier.value.end()) + "' éçµ‚ç«¯è¨˜å·ãŒå†å®šç¾©ã•ã‚Œã¾ã—ãŸ.",
+                                "'" + std::string(identifier.value.begin(), identifier.value.end()) + "' ”ñI’[‹L†‚ªÄ’è‹`‚³‚ê‚Ü‚µ‚½.",
                                 identifier.char_num,
                                 identifier.line_num
                             )
@@ -865,10 +834,10 @@ namespace kp19pp{
                     }else if(str == "token_desc"){
                         data.token_order = scanner_type::order_descending;
                     }else{
-                        throw(exception("ãƒ˜ãƒƒãƒ€ãƒ¼ãŒ 'token_asc', 'token_desc' ã®ã„ãšã‚Œã§ã‚‚ã‚ã‚Šã¾ã›ã‚“.", header.char_num, header.line_num));
+                        throw(exception("ƒwƒbƒ_[‚ª 'token_asc', 'token_desc' ‚Ì‚¢‚¸‚ê‚Å‚à‚ ‚è‚Ü‚¹‚ñ.", header.char_num, header.line_num));
                     }
                 }else if(data.analysis_phase == scanner_type::phase_grammar && str != "grammar"){
-                    throw(exception("ãƒ˜ãƒƒãƒ€ãƒ¼ãŒ'grammar'ã§ã¯ã‚ã‚Šã¾ã›ã‚“.", header.char_num, header.line_num));
+                    throw(exception("ƒwƒbƒ_[‚ª'grammar'‚Å‚Í‚ ‚è‚Ü‚¹‚ñ.", header.char_num, header.line_num));
                 }
                 return header;
             }
@@ -896,7 +865,7 @@ namespace kp19pp{
             }
         }
 
-        void define_scanner_grammar(){
+        void define_scanner_grammar(scanner_type &scanner){
             using namespace terminal_symbol;
             using namespace nonterminal_symbol;
 #define PUSH_BACK(z, n, elem) rhs.push_back(BOOST_PP_SEQ_ELEM(n, elem));
@@ -1114,7 +1083,7 @@ namespace kp19pp{
         }
 
         // !!
-        // ãƒãƒ«ãƒã‚¹ãƒ¬ãƒƒãƒ‰æœªå¯¾å¿œ
+        // ƒ}ƒ‹ƒ`ƒXƒŒƒbƒh–¢‘Î‰
         class lexer{
         public:
             lexer(scanner_type::token_seq_type &token_seq_){
@@ -1221,7 +1190,7 @@ namespace kp19pp{
                         raw[char_('|')][f_symbol_or] |
                         raw[char_(':')][f_symbol_colon]
                     )){
-                        throw(exception("å­—å¥è§£æã‚¨ãƒ©ãƒ¼.", char_count(), line_count()));
+                        throw(exception("š‹å‰ğÍƒGƒ‰[.", char_count(), line_count()));
                     }
                 }
             }
@@ -1243,22 +1212,30 @@ namespace kp19pp{
             }
         };
 
-        void scanner_type::define_grammar(){
+        void scanner_type::define_grammar(scanner_type &scanner){
             static bool flag = true;
             if(flag){
-                define_scanner_grammar();
+                for(
+                    auto iter = terminal_symbol::aux::terminal_symbol_data.begin(), end = terminal_symbol::aux::terminal_symbol_data.end();
+                    iter != end;
+                    ++iter
+                ){
+                    scanner.add_terminal_symbol(*iter, symbol_data_type());
+                }
+                terminal_symbol::aux::terminal_symbol_data.clear();
+                define_scanner_grammar(scanner);
                 flag = false;
             }
         }
 
         template<class PutFn, class ErrorFn>
         bool scanner_type::parse(const PutFn &put_fn, const ErrorFn &error_fn){
-            typedef std::vector<term_type>   term_stack_type;
-            typedef std::vector<std::size_t> state_stack_type;
-            typedef std::vector<token_type>  value_stack_type;
-            term_stack_type  term_stack;
-            state_stack_type state_stack;
-            value_stack_type value_stack;
+            typedef std::vector<term_type>      term_stack_type;
+            typedef std::vector<std::size_t>    state_stack_type;
+            typedef std::vector<token_type>     value_stack_type;
+            term_stack_type     term_stack;
+            state_stack_type    state_stack;
+            value_stack_type    value_stack;
             state_stack.push_back(0);
             for(token_seq_type::const_iterator iter = token_seq.begin(); ; ){
                 auto &t(*iter);
@@ -1301,7 +1278,7 @@ namespace kp19pp{
         }
 
         void scanner_type::scan(std::istream &in){
-            define_grammar();
+            define_grammar(*this);
             lexer lex(token_seq);
             lex.tokenize(in, string);
             token_seq.push_back(
@@ -1322,7 +1299,7 @@ namespace kp19pp{
             };
 
             make_parsing_table_option option;
-            // option.put_log = true; // ãƒ‡ãƒãƒƒã‚°ç”¨
+            // option.put_log = true; // ƒfƒoƒbƒO—p
 
             bool result = make_parsing_table(
                 nonterminal_symbol::StartPrime,
@@ -1332,13 +1309,13 @@ namespace kp19pp{
                 term_to_str
             );
 
-            if(!result){ // !! ãƒ–ãƒ¼ãƒˆç”¨ã®æ–‡æ³•ãŒé–“é•ã£ã¦ã„ã‚‹
+            if(!result){ // !! ƒu[ƒg—p‚Ì•¶–@‚ªŠÔˆá‚Á‚Ä‚¢‚é
                 return;
             }
 
             {
                 /*
-                // ãƒ­ã‚°ã‚’æ®‹ã™
+                // ƒƒO‚ğc‚·
                 std::ofstream parsing_log("parsing_log.txt");
                 auto put_fn = [&](const item_type &item) -> void{
                     parsing_log << "reduce " << term_to_str(item.lhs) << " :";
@@ -1361,10 +1338,10 @@ namespace kp19pp{
                 };
                 */
 
-                //ãƒ­ã‚°ã‚’æ®‹ã•ãªã„
+                //ƒƒO‚ğc‚³‚È‚¢
                 auto put_fn = [](const item_type&) -> void{  };
                 auto error_fn = [](const token_seq_type::const_iterator &iter) -> void{
-                    throw(exception("æ§‹æ–‡ã‚¨ãƒ©ãƒ¼.", iter->char_num, iter->line_num));
+                    throw(exception("\•¶ƒGƒ‰[.", iter->char_num, iter->line_num));
                 };
 
                 parse(put_fn, error_fn);
