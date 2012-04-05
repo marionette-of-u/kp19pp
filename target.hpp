@@ -36,7 +36,7 @@ namespace kp19pp{
 
         public:
             target_type();
-            bool make_parsing_table(scanner::scanner_type &scanner);
+            bool make_parsing_table(const scanner::scanner_type &scanner);
 
         private:
             target_type(const target_type &other);

@@ -126,6 +126,11 @@ namespace kp19pp{
                 symbol_type::hash
             > undefined_nonterminal_symbol_set_type;
 
+            typedef std::unordered_map<
+                term_type,
+                token_type
+            > term_to_token_map_type;
+
             typedef std::vector<token_type> token_seq_type;
 
         public:
@@ -144,6 +149,7 @@ namespace kp19pp{
             void check_undefined_nonterminal_symbol();
             void check_linked_nonterminal_symbol();
             void normalize_token_order();
+            void collect_token();
             template<class PutFn, class ErrorFn>
             bool parse(const PutFn &put_fn, const ErrorFn &error_fn);
 
@@ -158,6 +164,7 @@ namespace kp19pp{
             terminal_symbol_map_type                terminal_symbol_map;
             nonterminal_symbol_map_type             nonterminal_symbol_map;
             undefined_nonterminal_symbol_set_type   undefined_nonterminal_symbol_set;
+            term_to_token_map_type                  term_to_token_map;
             nonterminal_symbol_map_type::iterator   current_nonterminal_symbol_iter;
             symbol_type                             first_nonterminal_symbol;
 

@@ -677,7 +677,7 @@ namespace kp19pp{
                 std::cout << "make parsing table :\n  " << t.elapsed() << "sec\n";
             }
 
-            if(put_err_make_table(std::cout, term_to_str)){
+            if(put_err_make_table(std::cerr, term_to_str)){
                 return false;
             }
 

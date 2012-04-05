@@ -21,6 +21,10 @@ namespace kp19pp{
         base_type(first, last)
     {}
 
+    bool string_iter_pair_type::is_epsilon() const{
+        return empty();
+    }
+
     string_iter_pair_type &string_iter_pair_type::operator =(const string_iter_pair_type &other){
         base_type::operator =(other);
         return *this;

@@ -142,7 +142,8 @@ namespace kp19pp{
             base_type::clear();
             semantic_action.value = string_iter_pair_type(dummy_string.begin(), dummy_string.end());
             tag.value = string_iter_pair_type(dummy_string.begin(), dummy_string.end());
-            number = std::size_t();
+            tag.term = epsilon_functor()();
+            number = 0;
             argindex_to_symbol_map.clear();
             argindex_max = -1;
         }
@@ -161,7 +162,7 @@ namespace kp19pp{
             analysis_phase(phase_token),
             current_priority(0),
             current_terminal_symbol_id(1),
-            current_nonterminal_symbol_id(1),
+            current_nonterminal_symbol_id(2),
             current_rhs_number(0),
             scanned_first_nonterminal_symbol(false)
         {
@@ -259,6 +260,15 @@ namespace kp19pp{
             }
             for(auto iter = terminal_symbol_map.begin(), end = terminal_symbol_map.end(); iter != end; ++iter){
                 iter->second.priority = n - iter->second.priority;
+            }
+        }
+
+        void scanner_type::collect_token(){
+            for(auto iter = terminal_symbol_map.begin(), end = terminal_symbol_map.end(); iter != end; ++iter){
+                term_to_token_map[iter->first.value.term] = iter->first.value;
+            }
+            for(auto iter = nonterminal_symbol_map.begin(), end = nonterminal_symbol_map.end(); iter != end; ++iter){
+                term_to_token_map[iter->first.value.term] = iter->first.value;
             }
         }
 
@@ -593,7 +603,9 @@ namespace kp19pp{
 
             token_type make_tag(const semantic_type::value_type &value, scanner_type &data){
                 auto &tag(value[1]);
-                if(data.terminal_symbol_map.find(make_symbol(tag, tag.term)) == data.terminal_symbol_map.end()){
+                scanner_type::symbol_type symbol = make_symbol(tag, tag.term);
+                scanner_type::terminal_symbol_map_type::const_iterator find_ret = data.terminal_symbol_map.find(symbol);
+                if(find_ret == data.terminal_symbol_map.end()){
                     throw(
                         exception(
                             "'" +
@@ -605,13 +617,13 @@ namespace kp19pp{
                     );
                 }
                 data.current_rhs.tag = tag;
+                data.current_rhs.tag.term = find_ret->first.value.term;
                 return value[1];
             }
 
             token_type insert_rhs_element(const token_type &identifier, const token_type &arg, const semantic_type::value_type &value, scanner_type &data){
                 scanner_type::symbol_type symbol = make_symbol(identifier, identifier.term);
-                scanner_type::terminal_symbol_map_type::const_iterator
-                    find_ret_terminal_symbol = data.terminal_symbol_map.find(symbol);
+                scanner_type::terminal_symbol_map_type::const_iterator find_ret_terminal_symbol = data.terminal_symbol_map.find(symbol);
                 scanner_type::nonterminal_symbol_map_type::const_iterator
                     find_ret_nonterminal_symbol = data.nonterminal_symbol_map.find(symbol),
                     undefined_nonterminal_symbol_iter;
@@ -620,13 +632,16 @@ namespace kp19pp{
                     z = find_ret_nonterminal_symbol == data.nonterminal_symbol_map.end();
                     if(z){
                         w = true;
-                        scanner_type::symbol_type nonterminal_symbol = make_symbol(identifier, data.next_nonterminal_symbol_id());
-                        auto insert_ret = data.nonterminal_symbol_map.insert(std::make_pair(nonterminal_symbol, scanner_type::nonterminal_symbol_data_type()));
+                        symbol = make_symbol(identifier, data.next_nonterminal_symbol_id());
+                        auto insert_ret = data.nonterminal_symbol_map.insert(std::make_pair(symbol, scanner_type::nonterminal_symbol_data_type()));
                         auto &insert_ret_symbol(insert_ret.first->first);
-                        auto &insert_ret_data(insert_ret.first->second);
                         find_ret_nonterminal_symbol = undefined_nonterminal_symbol_iter = insert_ret.first;
                         data.undefined_nonterminal_symbol_set.insert(undefined_nonterminal_symbol_iter->first);
+                    }else{
+                        symbol = make_symbol(symbol.value, find_ret_nonterminal_symbol->first.value.term);
                     }
+                }else{
+                    symbol = make_symbol(symbol.value, find_ret_terminal_symbol->first.value.term);
                 }
                 auto append_arg = [&](const std::string &str_arg_index, const token_type &arg) -> void{
                     int arg_index = std::atoi(str_arg_index.c_str());
@@ -659,24 +674,17 @@ namespace kp19pp{
                                 )
                             );
                         }
-                        std::string str_arg_index(arg.value.begin(), arg.value.end());
-                        append_arg(str_arg_index, arg);
-                    }else{
-                        if(!arg.value.empty()){
-                            std::string arg_str_index(arg.value.begin(), arg.value.end());
-                            append_arg(arg_str_index, arg);
-                        }
                     }
-                    scanner_type::symbol_type identifier_symbol, symbol_arg;
-                    identifier_symbol.value = identifier;
+                    std::string arg_str_index(arg.value.begin(), arg.value.end());
+                    append_arg(arg_str_index, arg);
+                    scanner_type::symbol_type symbol_arg;
                     symbol_arg.value = arg;
-                    data.current_rhs.push_back(std::make_pair(identifier_symbol, symbol_arg));
+                    data.current_rhs.push_back(std::make_pair(symbol, symbol_arg));
                     return join_token(identifier, arg);
                 }else{
-                    scanner_type::symbol_type identifier_symbol, dummy_arg;
-                    identifier_symbol.value = identifier;
+                    scanner_type::symbol_type dummy_arg;
                     dummy_arg.value = eat(value, data);
-                    data.current_rhs.push_back(std::make_pair(identifier_symbol, dummy_arg));
+                    data.current_rhs.push_back(std::make_pair(symbol, dummy_arg));
                     return identifier;
                 }
             }
@@ -723,7 +731,7 @@ namespace kp19pp{
                         )
                     );
                 }
-                return rhs; 
+                return rhs;
             }
 
             token_type make_rhs(const semantic_type::value_type &value, scanner_type &data){
@@ -1341,7 +1349,7 @@ namespace kp19pp{
                 //ログを残さない
                 auto put_fn = [](const item_type&) -> void{  };
                 auto error_fn = [](const token_seq_type::const_iterator &iter) -> void{
-                    throw(exception("構文エラー.", iter->char_num, iter->line_num));
+                    throw(exception("文法エラー.", iter->char_num, iter->line_num));
                 };
 
                 parse(put_fn, error_fn);
@@ -1350,6 +1358,7 @@ namespace kp19pp{
             check_undefined_nonterminal_symbol();
             check_linked_nonterminal_symbol();
             normalize_token_order();
+            collect_token();
         }
     }
 }

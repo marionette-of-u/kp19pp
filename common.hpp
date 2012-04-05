@@ -15,6 +15,7 @@ namespace kp19pp{
         string_iter_pair_type(const string_iter_pair_type &other);
         string_iter_pair_type(string_iter_pair_type &&other);
         string_iter_pair_type(scanner_string_type::const_iterator first, scanner_string_type::const_iterator last);
+        bool is_epsilon() const;
         string_iter_pair_type &operator =(const string_iter_pair_type &other);
         string_iter_pair_type &operator =(std::pair<scanner_string_type::const_iterator, scanner_string_type::const_iterator>);
         bool operator ==(const string_iter_pair_type &other) const;

@@ -12,6 +12,8 @@ int main(){
         }
         kp19pp::scanner::scanner_type scanner;
         scanner.scan(ifile);
+        kp19pp::target::target_type target;
+        target.make_parsing_table(scanner);
     }catch(kp19pp::exception e){
         std::cerr << "error " << (e.line_num + 1) << ":" << (e.char_num + 1) << ":" << e.what() << "\n";
         return -1;
