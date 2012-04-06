@@ -1,54 +1,45 @@
 --------I_0
-l_pare : shift 1
-id     : shift 8
-E      : goto 7
+minus      : shift 1
+identifier : shift 8
+Expr       : goto 7
 
 --------I_1
-l_pare : shift 1
-id     : shift 8
-E      : goto 4
+minus      : shift 1
+identifier : shift 8
+Expr       : goto 4
 
 --------I_2
-l_pare : shift 1
-id     : shift 8
-E      : goto 5
+minus      : shift 1
+identifier : shift 8
+Expr       : goto 5
 
 --------I_3
-l_pare : shift 1
-id     : shift 8
-E      : goto 6
+minus      : shift 1
+identifier : shift 8
+Expr       : goto 6
 
 --------I_4
-ast    : shift 2
-plus   : shift 3
-r_pare : shift 9
+div   : reduce Expr
+minus : reduce Expr
+$     : reduce Expr
 
 --------I_5
-ast    : reduce E
-plus   : reduce E
-r_pare : reduce E
-$      : reduce E
+div   : reduce Expr
+minus : reduce Expr
+$     : reduce Expr
 
 --------I_6
-ast    : shift 2
-plus   : reduce E
-r_pare : reduce E
-$      : reduce E
+div   : shift 2
+minus : reduce Expr
+$     : reduce Expr
 
 --------I_7
-ast  : shift 2
-plus : shift 3
-$    : accept!!
+div   : shift 2
+minus : shift 3
+$     : accept!!
 
 --------I_8
-ast    : reduce E
-plus   : reduce E
-r_pare : reduce E
-$      : reduce E
-
---------I_9
-ast    : reduce E
-plus   : reduce E
-r_pare : reduce E
-$      : reduce E
+div   : reduce Expr
+minus : reduce Expr
+$     : reduce Expr
 
