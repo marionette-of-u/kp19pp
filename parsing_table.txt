@@ -24,14 +24,14 @@ plus   : shift 3
 r_pare : shift 9
 
 --------I_5
-ast    : shift 2
-plus   : shift 3
+ast    : reduce E
+plus   : reduce E
 r_pare : reduce E
 $      : reduce E
 
 --------I_6
 ast    : shift 2
-plus   : shift 3
+plus   : reduce E
 r_pare : reduce E
 $      : reduce E
 

@@ -773,21 +773,21 @@ namespace kp19pp{
                             }else{
                                 if(option.avoid_conflict){
                                     // !!
-                                    // MSVCÇ≈ std::pair<std::size_t, terminal_symbol_linkdir> Ç…Ç∑ÇÈÇ∆ error C2273 Ç™î≠ê∂
+                                    // MSVC10 Ç≈ std::pair<std::size_t, terminal_symbol_linkdir> Ç…Ç∑ÇÈÇ∆ error C2273 Ç™î≠ê∂
                                     std::pair<std::size_t, std::size_t> p, q;
-                                    auto tag_p = act.item->rhs->tag();
+                                    const auto &tag_p(act.item->rhs->tag());
                                     if(tag_p == epsilon){
-                                        auto &x(terminal_data_map.find(epsilon)->second);
-                                        p = std::make_pair(x.priority, x.linkdir);
-                                    }else{
                                         p = rhs_priority(act.item->rhs);
-                                    }
-                                    auto tag_q = other_act.item->rhs->tag();
-                                    if(tag_q == epsilon){
-                                        auto &x(terminal_data_map.find(epsilon)->second);
-                                        q = std::make_pair(x.priority, x.linkdir);
                                     }else{
+                                        auto &x(terminal_data_map.find(tag_p)->second);
+                                        p = std::make_pair(x.priority, x.linkdir);
+                                    }
+                                    const auto &tag_q(other_act.item->rhs->tag());
+                                    if(tag_q == epsilon){
                                         q = rhs_priority(other_act.item->rhs);
+                                    }else{
+                                        auto &x(terminal_data_map.find(tag_q)->second);
+                                        q = std::make_pair(x.priority, x.linkdir);
                                     }
                                     if(p.first > q.first || (p.first == q.first && p.second == left)){
                                         actions_i.erase(ret.first);

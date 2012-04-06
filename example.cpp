@@ -9,7 +9,7 @@ struct eos_functor{
 
 struct eps_functor{
     std::string operator ()() const{
-        return "eps";
+        return "";
     }
 };
 
