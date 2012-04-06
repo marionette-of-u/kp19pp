@@ -67,20 +67,27 @@ namespace kp19pp{
             }
             make_parsing_table_option option;
             option.avoid_conflict = true;
-            option.disambiguating = false;
+            option.disambiguating = true;
             option.put_alltime = false;
             option.put_time = false;
-            option.put_log = false;
+            option.put_log = true;
             bool result = base_type::make_parsing_table(
                 expression_start_prime,
                 (std::numeric_limits<term_type>::max)() - 1,
                 option,
                 [](const expression_set_type&, term_type term) -> bool{ return term < 0; },
-                [&](const term_type &term) -> std::string{
-                    return std::string(
-                        scanner.term_to_token_map.find(term)->second.value.begin(),
-                        scanner.term_to_token_map.find(term)->second.value.end()
-                    );
+                [&](term_type term) -> std::string{
+                    if(term == expression_start_prime.lhs){
+                        return "S'";
+                    }else if(term == end_of_seq_functor()()){
+                        return "$";
+                    }else{
+                        auto find_ret = scanner.term_to_token_map.find(term);
+                        return std::string(
+                            find_ret->second.value.begin(),
+                            find_ret->second.value.end()
+                        );
+                    }
                 }
             );
             return result;

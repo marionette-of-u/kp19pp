@@ -1,17 +1,16 @@
 <token_desc> token{
-    <right>{ unary_minus; }
     <left>{
-        div;
-        minus;
+        ast;
+        plus;
     }
-    identifier<std::string>;
+    l_pare, r_pare, id<std::string>;
 }
 
 <grammar> grammar{
-    Expr<std::string>
-        : [make_sub] Expr(0) minus Expr(1)
-        | [make_div] Expr(0) div Expr(1)
-        | [make_unary_minus] <unary_minus> minus Expr(0)
-        | [make_term] identifier(0)
+    E<std::string>
+        : [make_plus]  E(0) plus E(1)
+        | [make_multi] E(0) ast E(1)
+        | [make_expr]  l_pare E(0) r_pare
+        | [make_id]    id(0)
         ;
 }
