@@ -109,7 +109,7 @@ namespace kp19pp{
                     std::vector<term_type>(),
                     semantic(),
                     number_(0),
-                    tag_()
+                    tag_(eps_functor_type()())
                 {}
                 
                 rhs_type(std::size_t arg_number, term_type arg_tag) :
