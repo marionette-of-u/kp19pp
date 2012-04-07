@@ -1138,9 +1138,7 @@ namespace kp19pp{
                 const boost::iterator_range<scanner_string_type::const_iterator> &range,
                 const boost::spirit::qi::unused_type&,
                 bool
-            ){
-                char_count() += range.size();
-            }
+            ){ char_count() += range.size(); }
 
             static void f_end_of_line(
                 const boost::iterator_range<scanner_string_type::const_iterator> &range,
@@ -1149,22 +1147,6 @@ namespace kp19pp{
             ){
                 char_count() = 0;
                 ++line_count();
-            }
-
-            static void f_c_style_comment(
-                const boost::iterator_range<scanner_string_type::const_iterator> &range,
-                const boost::spirit::qi::unused_type&,
-                bool
-            ){
-                for(auto iter = range.begin(), end = range.end(); iter != end; ++iter){
-                    auto c(*iter);
-                    if(c == '\n'){
-                        char_count() = 0;
-                        ++line_count();
-                    }else{
-                        ++char_count();
-                    }
-                }
             }
 
         public:
@@ -1182,8 +1164,7 @@ namespace kp19pp{
                         iter, end,
                         raw[+(char_(' ') | char_('\t'))][f_whitespace] |
                         raw[char_('\n')][f_end_of_line] |
-                        raw[char_('/') >> char_('/') >> (char_ - char_('\n') >> char_('\n'))][f_end_of_line] |
-                        raw[char_('/') >> char_('*') >> *char_ >> char_('*') >> char_('/')][f_c_style_comment] |
+                        raw[char_('/') >> char_('/') >> *(char_ - char_('\n')) >> char_('\n')][f_end_of_line] |
                         raw[(char_('a', 'z') | char_('A', 'Z') | char_('_')) >> *(char_('a', 'z') | char_('A', 'Z') | char_('0', '9') | char_('_'))][f_identifier] |
                         raw[(char_('1', '9') >> *char_('0', '9')) | char_('0')][f_value] |
                         raw[char_(',')][f_comma] |
@@ -1200,9 +1181,7 @@ namespace kp19pp{
                         raw[char_(')')][f_r_round_pare] |
                         raw[char_('|')][f_symbol_or] |
                         raw[char_(':')][f_symbol_colon]
-                    )){
-                        throw(exception("字句解析エラー.", char_count(), line_count()));
-                    }
+                    )){ throw(exception("字句解析エラー.", char_count(), line_count())); }
                 }
             }
 
