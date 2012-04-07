@@ -151,9 +151,10 @@ namespace kp19pp{
         std::size_t scanner_type::nonterminal_symbol_data_type::rhs_type::hash::operator ()(const rhs_type &item) const{
             std::size_t h = 0;
             for(auto iter = item.begin(), end = item.end(); iter != end; ++iter){
-                for(auto iiter = iter->first.value.value.begin(), eend = iter->first.value.value.end(); iiter != eend; ++iiter){
-                    hash_combine(h, *iiter);
-                }
+                hash_combine(h, iter->first.value.term);
+                //for(auto iiter = iter->first.value.value.begin(), eend = iter->first.value.value.end(); iiter != eend; ++iiter){
+                //    hash_combine(h, *iiter);
+                //}
             }
             return h;
         }
@@ -213,35 +214,37 @@ namespace kp19pp{
         }
 
         void scanner_type::check_linked_nonterminal_symbol(){
-            std::set<const symbol_type*> scanned_nonterminal_symbol_set;
-            std::function<void(const symbol_type*, const nonterminal_symbol_data_type*)> rec_fn;
-            rec_fn = [&](const symbol_type *nonterminal_symbol, const nonterminal_symbol_data_type *data) -> void{
-                scanned_nonterminal_symbol_set.insert(nonterminal_symbol);
+            std::set<term_type> scanned_nonterminal_symbol_set;
+            std::function<void(term_type, const nonterminal_symbol_data_type*)> rec_fn;
+            rec_fn = [&](term_type term, const nonterminal_symbol_data_type *data) -> void{
+                if(!scanned_nonterminal_symbol_set.insert(term).second){
+                    return;
+                }
                 for(auto iter = data->rhs.begin(), end = data->rhs.end(); iter != end; ++iter){
                     auto &rhs_seq(*iter);
                     for(auto rhs_iter = rhs_seq.begin(), rhs_end = rhs_seq.end(); rhs_iter != rhs_end; ++rhs_iter){
                         auto &symbol(rhs_iter->first);
                         auto nonterminal_data_iter = nonterminal_symbol_map.find(symbol);
-                        if(nonterminal_data_iter == nonterminal_symbol_map.end()){ continue; }
-                        auto find_ret = scanned_nonterminal_symbol_set.find(&nonterminal_data_iter->first);
-                        if(find_ret != scanned_nonterminal_symbol_set.end()){ continue; }
-                        rec_fn(&symbol, &nonterminal_data_iter->second);
+                        if(nonterminal_data_iter == nonterminal_symbol_map.end()){
+                            continue;
+                        }
+                        rec_fn(symbol.value.term, &nonterminal_data_iter->second);
                     }
                 }
             };
             rec_fn(
-                &nonterminal_symbol_map.find(first_nonterminal_symbol)->first,
+                first_nonterminal_symbol.value.term,
                 &nonterminal_symbol_map[first_nonterminal_symbol]
             );
             exception_seq e("使われない非終端記号を検出しました.");
             for(auto iter = nonterminal_symbol_map.begin(), end = nonterminal_symbol_map.end(); iter != end; ++iter){
-                auto ptr(&iter->first);
-                if(scanned_nonterminal_symbol_set.find(ptr) == scanned_nonterminal_symbol_set.end()){
+                auto term(iter->first.value.term);
+                if(scanned_nonterminal_symbol_set.find(term) == scanned_nonterminal_symbol_set.end()){
                     e.seq.push_back(
                         exception(
-                            std::string(ptr->value.value.begin(), ptr->value.value.end()),
-                            ptr->value.char_num,
-                            ptr->value.line_num
+                            std::string(iter->first.value.value.begin(), iter->first.value.value.end()),
+                            iter->first.value.char_num,
+                            iter->first.value.line_num
                         )
                     );
                 }

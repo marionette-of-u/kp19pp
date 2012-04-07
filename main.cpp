@@ -28,7 +28,5 @@ int main(){
         return -1;
     }
 
-    std::cout << "³íI—¹.\n";
-
     return 0;
 }

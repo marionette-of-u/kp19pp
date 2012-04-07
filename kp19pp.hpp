@@ -473,9 +473,7 @@ namespace kp19pp{
                 linkdir(other.linkdir), priority(other.priority)
             {}
 
-            // Œ‹‡•ûŒü
             std::size_t linkdir;
-            // —Dæ‡ˆÊ
             std::size_t priority;
         };
 
@@ -1464,7 +1462,7 @@ namespace kp19pp{
                 stream << "\n";
             }
         }
-        
+
         expression_set_type   expression_set;
         term_set_type         terminal_symbol_map,
                               nonterminal_symbol_map;

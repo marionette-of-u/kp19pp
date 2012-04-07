@@ -67,7 +67,7 @@ namespace kp19pp{
             }
             make_parsing_table_option option;
             option.avoid_conflict = true;
-            option.disambiguating = true;
+            option.disambiguating = false;
             option.put_alltime = false;
             option.put_time = false;
             option.put_log = true;
