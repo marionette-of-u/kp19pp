@@ -485,8 +485,8 @@ namespace kp19pp{
             action_acc
         };
 
-        struct make_parsing_table_option{
-            make_parsing_table_option() :
+        struct make_parsing_table_options_type{
+            make_parsing_table_options_type() :
                 avoid_conflict(false),
                 disambiguating(false),
                 put_time(false),
@@ -554,7 +554,7 @@ namespace kp19pp{
         bool make_parsing_table(
             const expression_type &start_prime,
             const term_type &dummy_term,
-            const make_parsing_table_option &option,
+            const make_parsing_table_options_type &options,
             const IsNotTerminal &is_not_terminal,
             const TermToStr &term_to_str
         ){
@@ -577,7 +577,7 @@ namespace kp19pp{
             t.restart();
             fset_type first_set;
             make_first_set(first_set, expression_set, nonterminal_symbol_map, is_not_terminal);
-            if(option.put_time){
+            if(options.put_time){
                 std::cout << "make first-set :\n  " << t.elapsed() << "sec\n";
             }
 
@@ -596,7 +596,7 @@ namespace kp19pp{
                 init.insert(i);
                 slr_items(slr_items_set, expression_set, terminal_symbol_map, nonterminal_symbol_map, init, is_not_terminal);
             }
-            if(option.put_time){
+            if(options.put_time){
                 std::cout << "lr0 items :\n  " << t.elapsed() << "sec\n";
             }
 
@@ -607,7 +607,7 @@ namespace kp19pp{
             i.pos = 0;
             closure_init.insert(i);
             first_items_iter = lr0_main_items(items_set, slr_items_set, start_prime.lhs);
-            if(option.put_time){
+            if(options.put_time){
                 std::cout << "lr0 main items :\n  " << t.elapsed() << "sec\n";
             }
 
@@ -622,19 +622,19 @@ namespace kp19pp{
                 start_prime.lhs,
                 is_not_terminal
             );
-            if(option.put_time){
+            if(options.put_time){
                 std::cout << "make goto-fn map :\n  " << t.elapsed() << "sec\n";
             }
 
             // LR(0) 主要項集合を LALR(1) 化する
             t.restart();
             decision_lookahead(items_set, first_items_iter, expression_set, first_set, dummy_term, eos_functor_type()(), is_not_terminal);
-            if(option.put_time){
+            if(options.put_time){
                 std::cout << "decision lookahead :\n  " << t.elapsed() << "sec\n";
             }
 
             // 状態の出力
-            if(option.put_log){
+            if(options.put_log){
                 std::ofstream ofile("main_items.txt");
                 if(ofile){
                     put_items(ofile, items_set, first_items_iter, term_to_str);
@@ -645,12 +645,12 @@ namespace kp19pp{
             t.restart();
             slr_items_set.clear(); // ここで mirror は無効になる
             first_items_iter = closing_kernel(items_set, first_items_iter, expression_set, first_set, is_not_terminal);
-            if(option.put_time){
+            if(options.put_time){
                 std::cout << "closing kernel :\n  " << t.elapsed() << "sec\n";
             }
 
             // カーネルを閉じた状態の出力
-            if(option.put_log){
+            if(options.put_log){
                 std::ofstream ofile("items.txt");
                 if(ofile){
                     put_items(ofile, items_set, first_items_iter, term_to_str);
@@ -666,12 +666,12 @@ namespace kp19pp{
                 start_prime.lhs,
                 first_set,
                 terminal_data_map,
-                option,
+                options,
                 is_not_terminal,
                 eps_functor_type()(),
                 eos_functor_type()()
             );
-            if(option.put_time){
+            if(options.put_time){
                 std::cout << "make parsing table :\n  " << t.elapsed() << "sec\n";
             }
 
@@ -679,12 +679,12 @@ namespace kp19pp{
                 return false;
             }
 
-            if(option.put_log){
+            if(options.put_log){
                 std::ofstream ofile("parsing_table.txt");
                 put_parsing_table(ofile, parsing_table, term_to_str);
             }
 
-            if(option.put_alltime){
+            if(options.put_alltime){
                 std::cout << "total :\n  " << alltime.elapsed() << "sec\n";
             }
 
@@ -700,7 +700,7 @@ namespace kp19pp{
             const term_type &first_term,
             const fset_type &first_set,
             const symbol_data_map_type &terminal_data_map,
-            const make_parsing_table_option &option,
+            const make_parsing_table_options_type &options,
             const IsNotTerminal &is_not_terminal,
             const term_type &epsilon,
             const term_type &end_of_seq
@@ -756,7 +756,7 @@ namespace kp19pp{
                         if(!ret.second){
                             auto &other_act(ret.first->second);
                             if(other_act.first == action_reduce){
-                                if(option.disambiguating){
+                                if(options.disambiguating){
                                     if(act.item->rhs->number() < other_act.item->rhs->number()){
                                         actions_i.erase(ret.first);
                                         actions_i.insert(std::make_pair(term, act));
@@ -769,7 +769,7 @@ namespace kp19pp{
                                     return false;
                                 }
                             }else{
-                                if(option.avoid_conflict){
+                                if(options.avoid_conflict){
                                     // !!
                                     // MSVC10 で std::pair<std::size_t, terminal_symbol_linkdir> にすると error C2273 が発生
                                     std::pair<std::size_t, std::size_t> p, q;

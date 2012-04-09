@@ -101,17 +101,17 @@ void example(){
     }
 
     // エンジンのオプション --------
-    lalr1_type::make_parsing_table_option option;
-    option.avoid_conflict = true;
-    option.disambiguating = true;
-    option.put_log = true;
-    option.put_alltime = true;
-    option.put_time = true;
+    lalr1_type::make_parsing_table_options_type options;
+    options.avoid_conflict = true;
+    options.disambiguating = true;
+    options.put_log = true;
+    options.put_alltime = true;
+    options.put_time = true;
 
     bool result = lalr1.make_parsing_table(
         expression_start_prime,
         dummy_term,
-        option,
+        options,
         kp19pp::default_is_not_terminal<lalr1_type::expression_set_type>(),
         kp19pp::default_term_to_str<std::string>()
     );

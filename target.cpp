@@ -14,7 +14,10 @@ namespace kp19pp{
         target_type::target_type(const target_type &other) : base_type(other){}
         target_type::target_type(target_type &&other) : base_type(other){}
 
-        bool target_type::make_parsing_table(const scanner::scanner_type &scanner){
+        bool target_type::make_parsing_table(
+            const scanner::scanner_type &scanner,
+            const commandline_options_type &commandline_options
+        ){
             expression_type expression_start_prime;
             expression_start_prime.lhs = -1;
             {
@@ -65,16 +68,12 @@ namespace kp19pp{
                 symbol_data.priority = data.priority;
                 add_terminal_symbol(iter->first.value.term, symbol_data);
             }
-            make_parsing_table_option option;
-            option.avoid_conflict = true;
-            option.disambiguating = false;
-            option.put_alltime = false;
-            option.put_time = false;
-            option.put_log = true;
+            make_parsing_table_options_type options;
+            options.avoid_conflict = true;
             bool result = base_type::make_parsing_table(
                 expression_start_prime,
                 (std::numeric_limits<term_type>::max)() - 1,
-                option,
+                options,
                 [](const expression_set_type&, term_type term) -> bool{ return term < 0; },
                 [&](term_type term) -> std::string{
                     if(term == expression_start_prime.lhs){

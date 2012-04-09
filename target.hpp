@@ -3,6 +3,7 @@
 
 #include "kp19pp.hpp"
 #include "common.hpp"
+#include "commandline_options.hpp"
 #include "scanner.hpp"
 
 namespace kp19pp{
@@ -17,6 +18,9 @@ namespace kp19pp{
         };
 
         struct unused_type{};
+        struct semantic_type{
+            string_iter_pair_type action, type;
+        };
 
         class target_type : public lalr1_type<
             unused_type,
@@ -29,14 +33,17 @@ namespace kp19pp{
             typedef lalr1_type<
                 unused_type,
                 term_type,
-                string_iter_pair_type,
+                semantic_type,
                 end_of_seq_functor,
                 epsilon_functor
             > base_type;
 
         public:
             target_type();
-            bool make_parsing_table(const scanner::scanner_type &scanner);
+            bool make_parsing_table(
+                const scanner::scanner_type &scanner,
+                const commandline_options_type &commandline_options
+            );
 
         private:
             target_type(const target_type &other);

@@ -1288,13 +1288,13 @@ namespace kp19pp{
                 return term_to_str_map[id];
             };
 
-            make_parsing_table_option option;
-            // option.put_log = true; // デバッグ用
+            make_parsing_table_options_type options;
+            // options.put_log = true; // デバッグ用
 
             bool result = make_parsing_table(
                 nonterminal_symbol::StartPrime,
                 dummy_term,
-                option,
+                options,
                 is_not_terminal,
                 term_to_str
             );

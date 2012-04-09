@@ -1,11 +1,26 @@
 #include <iostream>
+#include <cstdlib>
 #include "exception.hpp"
+#include "commandline_options.hpp"
 #include "scanner.hpp"
 #include "target.hpp"
 
 int main(){
+    int argc = 5;
+    const char *argv[] = {
+        "dummy.exe",
+        "-c++",
+        "-indent=space",
+        "ifile.txt",
+        "ofile.hpp"
+    };
+
     try{
-        std::ifstream ifile("ifile.txt");
+        kp19pp::commandline_options_type commandline_options;
+        if(!commandline_options.get(argc, argv)){
+            return -1;
+        }
+        std::ifstream ifile(commandline_options.ifile_path());
         if(!ifile){
             std::cerr << "ƒtƒ@ƒCƒ‹‚Ì“Ç‚Ýž‚Ý‚ÉŽ¸”s‚µ‚Ü‚µ‚½.\n";
             return -1;
@@ -13,7 +28,10 @@ int main(){
         kp19pp::scanner::scanner_type scanner;
         scanner.scan(ifile);
         kp19pp::target::target_type target;
-        target.make_parsing_table(scanner);
+        bool result_make_parsing_table = target.make_parsing_table(scanner, commandline_options);
+        if(!result_make_parsing_table){
+            return -1;
+        }
     }catch(kp19pp::exception e){
         std::cerr << "error " << (e.line_num + 1) << ":" << (e.char_num + 1) << ":" << e.what() << "\n";
         return -1;
