@@ -97,7 +97,7 @@ namespace kp19pp{
                     void clear();
                     token_type semantic_action, tag;
                     std::size_t number;
-                    typedef std::map<int, std::pair<symbol_type, token_type>> argindex_to_symbol_map_type;
+                    typedef std::map<std::size_t, std::pair<symbol_type, token_type>> argindex_to_symbol_map_type;
                     argindex_to_symbol_map_type argindex_to_symbol_map;
                     int argindex_max;
                     struct hash{

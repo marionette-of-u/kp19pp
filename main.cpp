@@ -28,8 +28,7 @@ int main(){
         kp19pp::scanner::scanner_type scanner;
         scanner.scan(ifile);
         kp19pp::target::target_type target;
-        bool result_make_parsing_table = target.make_parsing_table(scanner, commandline_options);
-        if(!result_make_parsing_table){
+        if(!target.make_parsing_table(scanner, commandline_options)){
             return -1;
         }
     }catch(kp19pp::exception e){

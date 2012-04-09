@@ -51,6 +51,9 @@ namespace kp19pp{
                     if(!rhs.tag.value.is_epsilon()){
                         rhs_seq.set_attribute(0, rhs.tag.term);
                     }
+                    rhs_seq.semantic.type = &data.type.value;
+                    rhs_seq.semantic.action = &rhs.semantic_action.value;
+                    rhs_seq.semantic.argindex_to_symbol_map = &rhs.argindex_to_symbol_map;
                     e.rhs.insert(rhs_seq);
                 }
                 add_expression(e);
@@ -89,7 +92,11 @@ namespace kp19pp{
                     }
                 }
             );
-            return result;
+            if(!result){
+                return false;
+            }
+            // TODO : generating parser
+            return true;
         }
     }
 }

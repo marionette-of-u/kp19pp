@@ -19,13 +19,14 @@ namespace kp19pp{
 
         struct unused_type{};
         struct semantic_type{
-            string_iter_pair_type action, type;
+            const string_iter_pair_type *action, *type;
+            const scanner::scanner_type::nonterminal_symbol_data_type::rhs_type::argindex_to_symbol_map_type *argindex_to_symbol_map;
         };
 
         class target_type : public lalr1_type<
             unused_type,
             term_type,
-            string_iter_pair_type,
+            semantic_type,
             end_of_seq_functor,
             epsilon_functor
         >{

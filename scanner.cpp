@@ -22,7 +22,6 @@
 #include <boost/spirit/include/qi_parse.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
 #include "scanner.hpp"
-#include "target.hpp"
 #include "exception.hpp"
 
 namespace kp19pp{
@@ -152,9 +151,6 @@ namespace kp19pp{
             std::size_t h = 0;
             for(auto iter = item.begin(), end = item.end(); iter != end; ++iter){
                 hash_combine(h, iter->first.value.term);
-                //for(auto iiter = iter->first.value.value.begin(), eend = iter->first.value.value.end(); iiter != eend; ++iiter){
-                //    hash_combine(h, *iiter);
-                //}
             }
             return h;
         }
