@@ -1,6 +1,7 @@
 #include <iostream>
-#include <cstdlib>
+#include <algorithm>
 #include <locale>
+#include <cstdlib>
 #include "commandline_options.hpp"
 
 namespace kp19pp{
@@ -98,6 +99,7 @@ namespace kp19pp{
             if(c == '/' || c == '\\'){ break; }
             ret += c;
         }
+        std::reverse(ret.begin(), ret.end());
         return ret;
     }
 
