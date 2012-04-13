@@ -477,14 +477,15 @@ namespace kp19pp{
                     ++action_iter
                 ){
                     auto &action(*action_iter);
-                        
+
                     // action header
                     std::string case_tag;
                     {
-                        auto &token_name(scanner.term_to_token_map.find(action.first)->second.value);
-                        if(token_name.empty()){
+                        auto find_ret = scanner.term_to_token_map.find(action.first);
+                        if(find_ret == scanner.term_to_token_map.end()){
                             case_tag = scanner.namespace_token.to_string() + "_0";
                         }else{
+                            auto &token_name(find_ret->second.value);
                             case_tag = scanner.namespace_token.to_string() + "_" + token_name.to_string();
                         }
                     }
@@ -505,7 +506,7 @@ namespace kp19pp{
                     case action_reduce:
                         {
                             std::size_t base = action.second.item->rhs->size();
-                                
+
                             auto &item(*action.second.item);
 
                             std::size_t nonterminal_index;
