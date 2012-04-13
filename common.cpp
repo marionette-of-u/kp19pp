@@ -1,3 +1,4 @@
+#include <sstream>
 #include "kp19pp.hpp"
 #include "common.hpp"
 
@@ -25,6 +26,10 @@ namespace kp19pp{
         return empty();
     }
 
+    std::string string_iter_pair_type::to_string() const{
+        return std::string(begin(), end());
+    }
+
     string_iter_pair_type &string_iter_pair_type::operator =(const string_iter_pair_type &other){
         base_type::operator =(other);
         return *this;
@@ -43,6 +48,19 @@ namespace kp19pp{
         return true;
     }
 
+    bool string_iter_pair_type::operator <(const string_iter_pair_type &other) const{
+        bool a = begin() == end(), b = other.begin() == other.end();
+        if(a && !b){
+            return true;
+        }else if(!a && b || a && b){
+            return false;
+        }
+        auto iter = begin(), other_iter = other.begin();
+        auto last = end() - 1;
+        for(; *iter == *other_iter && iter != last; ++iter, ++other_iter);
+        return *reinterpret_cast<const unsigned char*>(&*iter) - *reinterpret_cast<const unsigned char*>(&*other_iter) < 0;
+    }
+
     scanner_string_type &string_iter_pair_type::dummy_strage(){
         static scanner_string_type dummy;
         return dummy;
@@ -54,5 +72,26 @@ namespace kp19pp{
             hash_combine(h, *iter);
         }
         return h;
+    }
+
+    std::ostream &operator <<(std::ostream &os, const string_iter_pair_type &range){
+        for(auto iter = range.begin(), end = range.end(); iter != end; ++iter){
+            os << *iter;
+        }
+        return os;
+    }
+
+    std::size_t lexical_cast(std::string value){
+        std::size_t r;
+        std::istringstream is(value);
+        is >> r;
+        return r;
+    }
+
+    std::string lexical_cast(std::size_t value){
+        std::string r;
+        std::ostringstream os;
+        os << value;
+        return os.str();
     }
 }

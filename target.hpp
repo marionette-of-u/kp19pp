@@ -1,6 +1,8 @@
 #ifndef KP19PP_TARGET_HPP_
 #define KP19PP_TARGET_HPP_
 
+#include <fstream>
+#include <iostream>
 #include "kp19pp.hpp"
 #include "common.hpp"
 #include "commandline_options.hpp"
@@ -19,8 +21,12 @@ namespace kp19pp{
 
         struct unused_type{};
         struct semantic_type{
+            semantic_type();
+            semantic_type(const semantic_type &other);
+            semantic_type(semantic_type &&other);
             const string_iter_pair_type *action, *type;
-            const scanner::scanner_type::nonterminal_symbol_data_type::rhs_type::argindex_to_symbol_map_type *argindex_to_symbol_map;
+            const scanner::scanner_type::nonterminal_symbol_data_type::rhs_type::argindex_to_symbol_map_type
+                *argindex_to_symbol_map;
         };
 
         class target_type : public lalr1_type<
@@ -49,6 +55,11 @@ namespace kp19pp{
         private:
             target_type(const target_type &other);
             target_type(target_type &&other);
+            void generate_cpp(
+                std::ostream &ostream,
+                const commandline_options_type &commandline_options,
+                const scanner::scanner_type &scanner
+            );
         };
     }
 }

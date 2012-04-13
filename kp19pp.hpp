@@ -15,31 +15,30 @@
 #include <fstream>
 #include <climits>
 #include <boost/timer.hpp>
-// #include <boost/functional/hash.hpp>
 
 namespace kp19pp{
     template<class Type>
     inline void hash_combine(std::size_t &h, const Type &value){
         // XOR combine
         h = h ^ std::hash<Type>()(value);
-        // boost::hash_combine(h, value);
     }
 
-    // 与えられたシンボルが非終端記号かを判定する functor
+    // 与えられたシンボルが非終端記号かを判定する
     // default は set から検索するだけ
+    // 動作チェック以外でこれが直接使われる事はない
     template<class ExpressionSetType>
     struct default_is_not_terminal{
         bool operator ()(
             const ExpressionSetType &expression_set,
             const typename ExpressionSetType::value_type &symbol
         ) const{
-            typename ExpressionSetType::value_type dummy_lhs(symbol);
-            return expression_set.find(dummy_lhs) != expression_set.end();
+            return expression_set.find(symbol) != expression_set.end();
         }
     };
 
     // term を人間が読める形式に変換する
     // default は値をそのまま返すだけ
+    // 動作チェック以外でこれが直接使われる事はない
     template<class TermType>
     struct default_term_to_str{
         const TermType &operator ()(const TermType &term) const{
@@ -305,18 +304,21 @@ namespace kp19pp{
         typedef std::unordered_map<term_type, std::unordered_set<term_type>> fset_type;
         struct action_type{
             bool operator ==(const action_type &other) const{
-                return first == other.first && second == other.second && *item == *other.item;
+                return
+                    action_kind == other.action_kind &&
+                    action_number == other.action_number &&
+                    *item == *other.item;
             }
 
             bool operator <(const action_type &other) const{
-                if(first < other.first){
+                if(action_kind < other.action_kind){
                     return true;
-                }else if(first > other.first){
+                }else if(action_kind > other.action_kind){
                     return false;
                 }
-                if(second < other.second){
+                if(action_number < other.action_number){
                     return true;
-                }else if(second > other.second){
+                }else if(action_number > other.action_number){
                     return false;
                 }
                 if(*item < *other.item){
@@ -325,7 +327,7 @@ namespace kp19pp{
                 return false;
             }
 
-            std::size_t first, second;
+            std::size_t action_kind, action_number;
             const item_type *item;
             struct hash{
                 std::size_t operator ()(const action_type &item) const{
@@ -517,6 +519,7 @@ namespace kp19pp{
             actions_set(),
             goto_fns_set(),
             conflict_set(),
+            ref_expression_set(expression_set),
             ref_parsing_table(parsing_table)
         {}
 
@@ -531,6 +534,7 @@ namespace kp19pp{
             actions_set(other.actions_set),
             goto_fns_set(other.goto_fns_set),
             conflict_set(other.conflict_set),
+            ref_expression_set(expression_set),
             ref_parsing_table(parsing_table)
         {}
 
@@ -545,6 +549,7 @@ namespace kp19pp{
             actions_set(std::move(other.actions_set)),
             goto_fns_set(std::move(other.goto_fns_set)),
             conflict_set(std::move(other.conflict_set)),
+            ref_expression_set(expression_set),
             ref_parsing_table(parsing_table)
         {}
             
@@ -681,7 +686,7 @@ namespace kp19pp{
 
             if(options.put_log){
                 std::ofstream ofile("parsing_table.txt");
-                put_parsing_table(ofile, parsing_table, term_to_str);
+                put_parsing_table(ofile, term_to_str);
             }
 
             if(options.put_alltime){
@@ -755,7 +760,7 @@ namespace kp19pp{
                         auto ret = actions_i.insert(std::make_pair(term, act));
                         if(!ret.second){
                             auto &other_act(ret.first->second);
-                            if(other_act.first == action_reduce){
+                            if(other_act.action_kind == action_reduce){
                                 if(options.disambiguating){
                                     if(act.item->rhs->number() < other_act.item->rhs->number()){
                                         actions_i.erase(ret.first);
@@ -810,12 +815,12 @@ namespace kp19pp{
                             ref_slr_goto(j_, expression_set, i, a, is_not_terminal);
                             index_j = state_to_index[&*items_set.find(j_)];
                         }
-                        act.first = action_shift;
-                        act.second = index_j;
+                        act.action_kind = action_shift;
+                        act.action_number = index_j;
                         auto ret = actions_i.insert(std::make_pair(a, act));
                         if(!ret.second){
                             auto &other_act(ret.first->second);
-                            if(other_act.first == action_reduce){
+                            if(other_act.action_kind == action_reduce){
                                 std::pair<std::size_t, std::size_t> p;
                                 auto tag = act.item->rhs->tag();
                                 if(tag == epsilon){
@@ -836,14 +841,14 @@ namespace kp19pp{
                             }
                         }
                     }else if(item.lhs != first_term){ //reduce
-                        act.first = action_reduce;
-                        act.second = 0;
+                        act.action_kind = action_reduce;
+                        act.action_number = 0;
                         for(auto la_iter = item.lookahead.begin(), la_end = item.lookahead.end(); la_iter != la_end; ++la_iter){
                             append_reduce(*la_iter, act);
                         }
                     }else{ //accept
-                        act.first = action_acc;
-                        act.second = 0;
+                        act.action_kind = action_acc;
+                        act.action_number = 0;
                         append_reduce(end_of_seq, act);
                     }
                 }
@@ -1364,25 +1369,14 @@ namespace kp19pp{
             for(auto conf_iter = conflict_set.begin(), conf_end = conflict_set.end(); conf_iter != conf_end; ++conf_iter){
                 z = true;
                 auto &conf(*conf_iter);
-                std::size_t pattern_id[] = { conf.x.first, conf.y.first };
+                std::size_t pattern_id[] = { conf.x.action_kind, conf.y.action_kind };
                 const char *pattern_str[2];
                 for(int i = 0; i < 2; ++i){
                     switch(pattern_id[i]){
-                    case action_shift:
-                        pattern_str[i] = "sft";
-                        break;
-
-                    case action_reduce:
-                        pattern_str[i] = "rdc";
-                        break;
-
-                    case action_acc:
-                        pattern_str[i] = "acc";
-                        break;
-
-                    default:
-                        pattern_str[i] = "err";
-                        break;
+                    case action_shift:  pattern_str[i] = "sft"; break;
+                    case action_reduce: pattern_str[i] = "rdc"; break;
+                    case action_acc:    pattern_str[i] = "acc"; break;
+                    default:            pattern_str[i] = "err"; break;
                     }
                 }
                 auto &p_item(*conf.x.item);
@@ -1410,19 +1404,31 @@ namespace kp19pp{
         }
 
         template<class TermToStr>
-        void put_parsing_table(std::ostream &stream, const action_table_type &table, const TermToStr &term_to_str){
+        void put_parsing_table(std::ostream &stream, const TermToStr &term_to_str) const{
             std::size_t i = 0;
-            for(auto table_element_iter = table.begin(), table_element_end = table.end(); table_element_iter != table_element_end; ++table_element_iter, ++i){
+            for(
+                auto table_element_iter = ref_parsing_table.begin(), table_element_end = ref_parsing_table.end();
+                table_element_iter != table_element_end;
+                ++table_element_iter, ++i
+            ){
                 stream << "--------I_" << i << "\n";
                 auto &table_element(*table_element_iter);
                 auto &actions(*table_element.actions);
                 auto &goto_fns(*table_element.goto_fns);
                 std::size_t max_term_length = 0;
-                for(auto action_iter = actions.begin(), action_end = actions.end(); action_iter != action_end; ++action_iter){
+                for(
+                    auto action_iter = actions.begin(), action_end = actions.end();
+                    action_iter != action_end;
+                    ++action_iter
+                ){
                     auto term(term_to_str(action_iter->first));
                     if(max_term_length < term.size()){ max_term_length = term.size(); }
                 }
-                for(auto goto_fn_iter = goto_fns.begin(), goto_fn_end = goto_fns.end(); goto_fn_iter != goto_fn_end; ++goto_fn_iter){
+                for(
+                    auto goto_fn_iter = goto_fns.begin(), goto_fn_end = goto_fns.end();
+                    goto_fn_iter != goto_fn_end;
+                    ++goto_fn_iter
+                ){
                     auto term(term_to_str(goto_fn_iter->first));
                     if(max_term_length < term.size()){ max_term_length = term.size(); }
                 }
@@ -1431,16 +1437,20 @@ namespace kp19pp{
                         stream << static_cast<char>(' ');
                     }
                 };
-                for(auto action_iter = actions.begin(), action_end = actions.end(); action_iter != action_end; ++action_iter){
+                for(
+                    auto action_iter = actions.begin(), action_end = actions.end();
+                    action_iter != action_end;
+                    ++action_iter
+                ){
                     auto &term_action(*action_iter);
                     auto term(term_to_str(term_action.first));
                     auto &action(term_action.second);
                     stream << term;
                     put_delim(term.size());
                     stream << ": ";
-                    switch(action.first){
+                    switch(action.action_kind){
                     case action_shift:
-                        stream << "shift " << action.second;
+                        stream << "shift " << action.action_number;
                         break;
 
                     case action_reduce:
@@ -1453,7 +1463,11 @@ namespace kp19pp{
                     }
                     stream << "\n";
                 }
-                for(auto goto_fn_iter = goto_fns.begin(), goto_fn_end = goto_fns.end(); goto_fn_iter != goto_fn_end; ++goto_fn_iter){
+                for(
+                    auto goto_fn_iter = goto_fns.begin(), goto_fn_end = goto_fns.end();
+                    goto_fn_iter != goto_fn_end;
+                    ++goto_fn_iter
+                ){
                     auto term(term_to_str(goto_fn_iter->first));
                     stream << term;
                     put_delim(term.size());
@@ -1475,7 +1489,8 @@ namespace kp19pp{
         conflict_set_type     conflict_set;
 
     public:
-        const action_table_type &ref_parsing_table;
+        const expression_set_type   &ref_expression_set;
+        const action_table_type     &ref_parsing_table;
     };
 }
 

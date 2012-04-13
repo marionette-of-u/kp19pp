@@ -18,6 +18,11 @@ namespace kp19pp{
             term_type operator ()() const;
         };
 
+        struct is_not_terminal_functor{
+            template<class UnusedType>
+            bool operator ()(const UnusedType&, term_type) const;
+        };
+
         extern const scanner_string_type dummy_string;
 
         class scanner_type;
@@ -66,6 +71,7 @@ namespace kp19pp{
                 symbol_type();
                 symbol_type(const symbol_type &other);
                 bool operator ==(const symbol_type &other) const;
+                bool operator <(const symbol_type &other) const;
                 token_type value;
                 struct hash{
                     std::size_t operator ()(const symbol_type &item) const;
@@ -77,14 +83,13 @@ namespace kp19pp{
                 terminal_symbol_data_type(const terminal_symbol_data_type &other);
                 token_type type;
                 terminal_symbol_linkdir linkdir;
-                std::size_t priority;
+                std::size_t             priority;
             };
 
             struct nonterminal_symbol_data_type{
                 nonterminal_symbol_data_type();
                 nonterminal_symbol_data_type(const nonterminal_symbol_data_type &other);
-                token_type type;
-
+                nonterminal_symbol_data_type(nonterminal_symbol_data_type &&other);
                 class rhs_type : public std::vector<std::pair<symbol_type, symbol_type>>{
                 private:
                     typedef std::vector<std::pair<symbol_type, symbol_type>> base_type;
@@ -97,16 +102,32 @@ namespace kp19pp{
                     void clear();
                     token_type semantic_action, tag;
                     std::size_t number;
-                    typedef std::map<std::size_t, std::pair<symbol_type, token_type>> argindex_to_symbol_map_type;
+                    struct arg_data_type{
+                        symbol_type         symbol;
+                        token_type          number;
+                        const token_type    mutable *type_cache;
+                    };
+
+                    typedef std::map<
+                        std::size_t,
+                        arg_data_type
+                    > argindex_to_symbol_map_type;
+
                     argindex_to_symbol_map_type argindex_to_symbol_map;
-                    int argindex_max;
+                    int                         argindex_max;
+
                     struct hash{
                         std::size_t operator ()(const rhs_type &item) const;
                     };
                 };
                 
-                typedef std::unordered_set<rhs_type, rhs_type::hash> rhs_set_type;
-                rhs_set_type rhs;
+                typedef std::unordered_set<
+                    rhs_type,
+                    rhs_type::hash
+                > rhs_set_type;
+
+                token_type      type;
+                rhs_set_type    rhs;
             };
 
             typedef std::unordered_map<
@@ -131,6 +152,11 @@ namespace kp19pp{
                 token_type
             > term_to_token_map_type;
 
+            typedef std::unordered_map<
+                std::size_t,
+                token_type
+            > number_to_token_map_type;
+
             typedef std::vector<token_type> token_seq_type;
 
         public:
@@ -150,15 +176,17 @@ namespace kp19pp{
             void check_linked_nonterminal_symbol();
             void normalize_token_order();
             void collect_token();
+            void caching_arg_type() const;
+            void augment();
             template<class PutFn, class ErrorFn>
             bool parse(const PutFn &put_fn, const ErrorFn &error_fn);
 
         public:
             token_seq_type                          token_seq;
-            scanner_string_type                     start_prime;
             string_iter_pair_type                   namespace_token,
                                                     namespace_grammar;
-            std::size_t                             current_priority;
+            std::size_t                             current_priority,
+                                                    current_token_number;
             std::vector<terminal_symbol_data_type*> current_terminal_symbol_seq;
             nonterminal_symbol_data_type::rhs_type  current_rhs;
             terminal_symbol_map_type                terminal_symbol_map;
@@ -167,6 +195,8 @@ namespace kp19pp{
             term_to_token_map_type                  term_to_token_map;
             nonterminal_symbol_map_type::iterator   current_nonterminal_symbol_iter;
             symbol_type                             first_nonterminal_symbol;
+            number_to_token_map_type                number_to_token_map;
+            bool                                    external_token;
 
         private:
             scanner_string_type string;

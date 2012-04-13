@@ -40,9 +40,6 @@ int main(){
             std::cerr << (iter->line_num + 1) << ":" << (iter->char_num + 1) << ":" << iter->what() << "\n";
         }
         return -1;
-    }catch(...){
-        std::cerr << "–¢’m‚ÌƒGƒ‰[‚ª”­¶‚µ‚Ü‚µ‚½.\n";
-        return -1;
     }
 
     return 0;

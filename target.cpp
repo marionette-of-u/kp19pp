@@ -10,6 +10,20 @@ namespace kp19pp{
             return (std::numeric_limits<int>::max)();
         }
 
+        semantic_type::semantic_type() :
+            action(nullptr), type(nullptr), argindex_to_symbol_map(nullptr)
+        {}
+
+        semantic_type::semantic_type(const semantic_type &other) :
+            action(other.action), type(other.type), argindex_to_symbol_map(other.argindex_to_symbol_map)
+        {}
+
+        semantic_type::semantic_type(semantic_type &&other) :
+            action(std::move(other.action)),
+            type(std::move(other.type)),
+            argindex_to_symbol_map(std::move(other.argindex_to_symbol_map))
+        {}
+
         target_type::target_type() : base_type(){}
         target_type::target_type(const target_type &other) : base_type(other){}
         target_type::target_type(target_type &&other) : base_type(other){}
@@ -73,6 +87,7 @@ namespace kp19pp{
             }
             make_parsing_table_options_type options;
             options.avoid_conflict = true;
+            options.put_log = true;
             bool result = base_type::make_parsing_table(
                 expression_start_prime,
                 (std::numeric_limits<term_type>::max)() - 1,
@@ -85,17 +100,35 @@ namespace kp19pp{
                         return "$";
                     }else{
                         auto find_ret = scanner.term_to_token_map.find(term);
-                        return std::string(
-                            find_ret->second.value.begin(),
-                            find_ret->second.value.end()
-                        );
+                        return find_ret->second.value.to_string();
                     }
                 }
             );
             if(!result){
                 return false;
             }
-            // TODO : generating parser
+            std::ofstream ofile(commandline_options.ofile_path());
+            if(!ofile){
+                std::cerr << "ƒtƒ@ƒCƒ‹‚Ì¶¬‚ÉŽ¸”s‚µ‚Ü‚µ‚½.\n";
+                return false;
+            }
+            switch(commandline_options.language()){
+            case commandline_options_type::language_cpp:
+                generate_cpp(ofile, commandline_options, scanner);
+                break;
+
+            case commandline_options_type::language_csharp:
+                break;
+
+            case commandline_options_type::language_d:
+                break;
+
+            case commandline_options_type::language_java:
+                break;
+
+            case commandline_options_type::language_javascript:
+                break;
+            }
             return true;
         }
     }

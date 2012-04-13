@@ -1,45 +1,44 @@
 --------I_0
-minus      : shift 1
-identifier : shift 8
-Expr       : goto 7
+ast : shift 1
+id  : shift 5
+R   : goto 7
+L   : goto 4
+S   : goto 9
 
 --------I_1
-minus      : shift 1
-identifier : shift 8
-Expr       : goto 4
+ast : shift 1
+id  : shift 5
+R   : goto 6
+L   : goto 3
 
 --------I_2
-minus      : shift 1
-identifier : shift 8
-Expr       : goto 5
+ast : shift 1
+id  : shift 5
+R   : goto 8
+L   : goto 3
 
 --------I_3
-minus      : shift 1
-identifier : shift 8
-Expr       : goto 6
+eq : reduce R
+$  : reduce R
 
 --------I_4
-div   : reduce Expr
-minus : reduce Expr
-$     : reduce Expr
+eq : shift 2
+$  : reduce R
 
 --------I_5
-div   : reduce Expr
-minus : reduce Expr
-$     : reduce Expr
+eq : reduce L
+$  : reduce L
 
 --------I_6
-div   : shift 2
-minus : reduce Expr
-$     : reduce Expr
+eq : reduce L
+$  : reduce L
 
 --------I_7
-div   : shift 2
-minus : shift 3
-$     : accept!!
+$ : reduce S
 
 --------I_8
-div   : reduce Expr
-minus : reduce Expr
-$     : reduce Expr
+$ : reduce S
+
+--------I_9
+$ : accept!!
 

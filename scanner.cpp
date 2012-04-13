@@ -34,6 +34,11 @@ namespace kp19pp{
             return (std::numeric_limits<int>::max)();
         }
 
+        template<class UnusedType>
+        bool is_not_terminal_functor::operator ()(const UnusedType&, term_type term) const{
+            return term < 0;
+        }
+
         const scanner_string_type dummy_string;
         
         semantic_type::semantic_type() :
@@ -102,6 +107,11 @@ namespace kp19pp{
             rhs(other.rhs)
         {}
 
+        scanner_type::nonterminal_symbol_data_type::nonterminal_symbol_data_type(nonterminal_symbol_data_type &&other) :
+            type(std::move(other.type)),
+            rhs(std::move(other.rhs))
+        {}
+
         scanner_type::nonterminal_symbol_data_type::rhs_type::rhs_type() :
             base_type(),
             semantic_action(),
@@ -158,13 +168,13 @@ namespace kp19pp{
         scanner_type::scanner_type() :
             analysis_phase(phase_token),
             current_priority(0),
+            current_token_number(0),
             current_terminal_symbol_id(1),
             current_nonterminal_symbol_id(2),
             current_rhs_number(0),
+            external_token(false),
             scanned_first_nonterminal_symbol(false)
-        {
-            start_prime.push_back('S'), start_prime.push_back('\'');
-        }
+        {}
 
         term_type scanner_type::next_terminal_symbol_id(){
             return current_terminal_symbol_id++;
@@ -200,7 +210,7 @@ namespace kp19pp{
             ){
                 e.seq.push_back(
                     exception(
-                        std::string(iter->value.value.begin(), iter->value.value.end()),
+                        iter->value.value.to_string(),
                         iter->value.char_num,
                         iter->value.line_num
                     )
@@ -238,7 +248,7 @@ namespace kp19pp{
                 if(scanned_nonterminal_symbol_set.find(term) == scanned_nonterminal_symbol_set.end()){
                     e.seq.push_back(
                         exception(
-                            std::string(iter->first.value.value.begin(), iter->first.value.value.end()),
+                            iter->first.value.value.to_string(),
                             iter->first.value.char_num,
                             iter->first.value.line_num
                         )
@@ -269,6 +279,47 @@ namespace kp19pp{
             for(auto iter = nonterminal_symbol_map.begin(), end = nonterminal_symbol_map.end(); iter != end; ++iter){
                 term_to_token_map[iter->first.value.term] = iter->first.value;
             }
+        }
+
+        void scanner_type::caching_arg_type() const{
+            for(
+                auto iter = nonterminal_symbol_map.begin(), end = nonterminal_symbol_map.end();
+                iter != end;
+                ++iter
+            ){
+                auto &data(iter->second);
+                for(
+                    auto rhs_iter = data.rhs.begin(), rhs_end = data.rhs.end();
+                    rhs_iter != rhs_end;
+                    ++rhs_iter
+                ){
+                    auto &rhs(*rhs_iter);
+                    for(
+                        auto elem_iter = rhs.argindex_to_symbol_map.begin(), elem_end = rhs.argindex_to_symbol_map.end();
+                        elem_iter != elem_end;
+                        ++elem_iter
+                    ){
+                        auto &arg_data(elem_iter->second);
+                        if(is_not_terminal_functor()(int(), arg_data.symbol.value.term)){
+                            arg_data.type_cache = &nonterminal_symbol_map.find(arg_data.symbol)->second.type;
+                        }else{
+                            arg_data.type_cache = &terminal_symbol_map.find(arg_data.symbol)->second.type;
+                        }
+                    }
+                }
+            }
+        }
+
+        void scanner_type::augment(){
+            symbol_type start_prime, start;
+            start_prime.value.term = -1;
+            start.value.term = -2;
+            nonterminal_symbol_data_type::rhs_type rhs;
+            rhs.push_back(std::make_pair(start, symbol_type()));
+            nonterminal_symbol_data_type data;
+            data.rhs.insert(rhs);
+            nonterminal_symbol_map.insert(std::make_pair(start_prime, data));
+            term_to_token_map.insert(std::make_pair(start_prime.value.term, token_type()));
         }
 
         term_type dummy_term = (std::numeric_limits<int>::max)() - 1;
@@ -362,7 +413,9 @@ namespace kp19pp{
             DECL(Exp);
             DECL(ExpStatements);
             DECL(ExpStatementsRest);
-            DECL(Header);
+            DECL(TokenHeader);
+            DECL(TokenHeaderRest_opt);
+            DECL(GrammarHeader);
             DECL(GrammarNamespace);
             DECL(TokenNamespace);
             DECL(TokenBody);
@@ -410,13 +463,14 @@ namespace kp19pp{
                     throw(
                         exception(
                             "'" +
-                            std::string(symbol.value.value.begin(), symbol.value.value.end()) +
+                            symbol.value.value.to_string() +
                             "' トークンの多重定義です.",
                             symbol.value.char_num,
                             symbol.value.line_num
                         )
                     );
                 }
+                data.number_to_token_map[data.current_token_number++] = symbol.value;
                 data.current_terminal_symbol_seq.push_back(&ret.first->second);
                 return ret;
             }
@@ -536,7 +590,7 @@ namespace kp19pp{
                         throw(
                             exception(
                                 "'" +
-                                std::string(linkdir.value.begin(), linkdir.value.end()) +
+                                linkdir.value.to_string() +
                                 "' 終端記号の結合方向が 'left', 'right', 'nonassoc' のいずれでもありません.",
                                 linkdir.char_num,
                                 linkdir.line_num
@@ -544,19 +598,23 @@ namespace kp19pp{
                         );
                     }
                 }
-                for(auto iter = data.current_terminal_symbol_seq.begin(), end = data.current_terminal_symbol_seq.end(); iter != end; ++iter){
-                    (*iter)->linkdir = linkdir_value;
-                }
+                for(
+                    auto iter = data.current_terminal_symbol_seq.begin(), end = data.current_terminal_symbol_seq.end();
+                    iter != end;
+                    ++iter
+                ){ (*iter)->linkdir = linkdir_value; }
                 data.current_terminal_symbol_seq.clear();
                 return eat(value, data);
             }
 
             token_type make_seq_statements_a(const semantic_type::value_type &value, scanner_type &data){
+                auto &identifier(value[0]);
                 ++data.current_priority;
-                return value[0];
+                return identifier;
             }
 
             token_type make_seq_statements_b(const semantic_type::value_type &value, scanner_type &data){
+                auto &identifier(value[1]);
                 ++data.current_priority;
                 return join_token(value[0], value[1]);
             }
@@ -574,12 +632,16 @@ namespace kp19pp{
             }
 
             token_type make_top_level_seq_statements_element_a(const semantic_type::value_type &value, scanner_type &data){
-                for(auto iter = data.current_terminal_symbol_seq.begin(), end = data.current_terminal_symbol_seq.end(); iter != end; ++iter){
-                    (*iter)->linkdir = scanner_type::nonassoc;
-                }
+                auto &identifier(value[0]);
+                identifier.value;
+                for(
+                    auto iter = data.current_terminal_symbol_seq.begin(), end = data.current_terminal_symbol_seq.end();
+                    iter != end;
+                    ++iter
+                ){ (*iter)->linkdir = scanner_type::nonassoc; }
                 data.current_terminal_symbol_seq.clear();
                 ++data.current_priority;
-                return value[0];
+                return identifier;
             }
 
             token_type make_top_level_seq_statements_element_b(const semantic_type::value_type &value, scanner_type &data){
@@ -608,7 +670,7 @@ namespace kp19pp{
                     throw(
                         exception(
                             "'" +
-                            std::string(tag.value.begin(), tag.value.end()) +
+                            tag.value.to_string() +
                             "' タグが終端記号ではありません.",
                             tag.char_num,
                             tag.line_num
@@ -646,12 +708,14 @@ namespace kp19pp{
                     int arg_index = std::atoi(str_arg_index.c_str());
                     scanner_type::nonterminal_symbol_data_type::rhs_type &rhs(data.current_rhs);
                     if(rhs.argindex_max < arg_index){ rhs.argindex_max = arg_index; }
-                    auto ret_argindex_insert = rhs.argindex_to_symbol_map.insert(std::make_pair(arg_index, std::make_pair(symbol, arg)));
-                    if(!ret_argindex_insert.second){
+                    scanner_type::nonterminal_symbol_data_type::rhs_type::arg_data_type arg_data;
+                    arg_data.symbol = symbol;
+                    arg_data.number = arg;
+                    if(!rhs.argindex_to_symbol_map.insert(std::make_pair(arg_index, arg_data)).second){
                         throw(
                             exception(
                                 "'" +
-                                std::string(arg.value.begin(), arg.value.end()) +
+                                arg.value.to_string() +
                                 "' 引数が重複しています.",
                                 arg.char_num,
                                 arg.line_num
@@ -666,7 +730,7 @@ namespace kp19pp{
                             throw(
                                 exception(
                                     "'" +
-                                    std::string(identifier.value.begin(), identifier.value.end()) +
+                                    identifier.value.to_string() +
                                     "' 引数となる記号に型がありません.",
                                     identifier.char_num,
                                     identifier.line_num
@@ -709,14 +773,6 @@ namespace kp19pp{
                             data.current_rhs.semantic_action.line_num
                         )
                     );
-                }else if(!data.current_rhs.empty() && data.current_rhs.semantic_action.value.empty()){
-                    throw(
-                        exception(
-                            "セマンティックアクションがありません.",
-                            data.current_rhs[0].first.value.char_num,
-                            data.current_rhs[0].first.value.line_num
-                        )
-                    );
                 }
                 data.current_rhs.number = data.next_rhs_number();
                 auto ret = data.current_nonterminal_symbol_iter->second.rhs.insert(data.current_rhs);
@@ -751,8 +807,8 @@ namespace kp19pp{
                         throw(
                             exception(
                                 "規則内での引数が連続していません.",
-                                iter->second.second.char_num,
-                                iter->second.second.line_num
+                                iter->second.number.char_num,
+                                iter->second.number.line_num
                             )
                         );
                     }
@@ -769,9 +825,14 @@ namespace kp19pp{
             token_type make_lhs(const semantic_type::value_type &value, scanner_type &data){
                 auto &identifier(value[0]);
                 auto &type(value.back());
+                bool decisied_nonterminal_symbol_term = false;
+                term_type nonterminal_symbol_term = epsilon_functor()();
                 if(!data.get_scanned_first_nonterminal_symbol()){
                     data.first_nonterminal_symbol.value = identifier;
+                    nonterminal_symbol_term = data.next_nonterminal_symbol_id();
+                    data.first_nonterminal_symbol.value.term = nonterminal_symbol_term;
                     data.set_scanned_first_nonterminal_symbol();
+                    decisied_nonterminal_symbol_term = true;
                 }
                 scanner_type::symbol_type undefined_dummy;
                 undefined_dummy.value = identifier;
@@ -779,13 +840,18 @@ namespace kp19pp{
                 if(ret == data.undefined_nonterminal_symbol_set.end()){
                     scanner_type::symbol_type terminal_symbol = make_symbol(identifier, identifier.term);
                     scanner_type::terminal_symbol_data_type terminal_symbol_data;
-                    scanner_type::symbol_type nonterminal_symbol = make_symbol(identifier, data.next_nonterminal_symbol_id());
+                    scanner_type::symbol_type nonterminal_symbol;
+                    if(decisied_nonterminal_symbol_term){
+                        nonterminal_symbol = make_symbol(identifier, nonterminal_symbol_term);
+                    }else{
+                        nonterminal_symbol = make_symbol(identifier, data.next_nonterminal_symbol_id());
+                    }
                     scanner_type::nonterminal_symbol_data_type nonterminal_symbol_data;
                     nonterminal_symbol_data.type = type;
                     if(data.terminal_symbol_map.find(terminal_symbol) != data.terminal_symbol_map.end()){
                         throw(
                             exception(
-                                "'" + std::string(identifier.value.begin(), identifier.value.end()) + "' 終端記号と非終端記号が衝突しました.",
+                                "'" + identifier.value.to_string() + "' 終端記号と非終端記号が衝突しました.",
                                 identifier.char_num,
                                 identifier.line_num
                             )
@@ -795,7 +861,7 @@ namespace kp19pp{
                     if(!ret.second){
                         throw(
                             exception(
-                                "'" + std::string(identifier.value.begin(), identifier.value.end()) + "' 非終端記号が再定義されました.",
+                                "'" + identifier.value.to_string() + "' 非終端記号が再定義されました.",
                                 identifier.char_num,
                                 identifier.line_num
                             )
@@ -834,7 +900,7 @@ namespace kp19pp{
 
             token_type make_header(const semantic_type::value_type &value, scanner_type &data){
                 auto &header(value[1]);
-                auto str(std::string(header.value.begin(), header.value.end()));
+                auto str(header.value.to_string());
                 if(data.analysis_phase == scanner_type::phase_token){
                     if(str == "token_asc"){
                         data.token_order = scanner_type::order_ascending;
@@ -844,9 +910,24 @@ namespace kp19pp{
                         throw(exception("ヘッダーが 'token_asc', 'token_desc' のいずれでもありません.", header.char_num, header.line_num));
                     }
                 }else if(data.analysis_phase == scanner_type::phase_grammar && str != "grammar"){
-                    throw(exception("ヘッダーが'grammar'ではありません.", header.char_num, header.line_num));
+                    throw(exception("ヘッダーが 'grammar' ではありません.", header.char_num, header.line_num));
                 }
                 return header;
+            }
+
+            token_type make_token_header_rest(const semantic_type::value_type &value, scanner_type &data){
+                auto &identifier(value[1]);
+                if(identifier.value.to_string() != "extern"){
+                    throw(
+                        exception(
+                            "tokenヘッダー修飾子が 'extern' ではありません.",
+                            identifier.char_num,
+                            identifier.line_num
+                        )
+                    );
+                }
+                data.external_token = true;
+                return identifier;
             }
 
             token_type make_token_body(const semantic_type::value_type &value, scanner_type &data){
@@ -1045,14 +1126,24 @@ namespace kp19pp{
                 ((ExpStatements.lhs)(semicolon))                                    (eat)
             );
 
+            DECL_SEQS_EPS(
+                TokenHeaderRest_opt,
+                ((comma)(identifier))                                               (make_token_header_rest)
+            )
+
             DECL_SEQS(
-                Header,
-                ((l_bracket)(identifier)(r_bracket))                                (make_header)
+                TokenHeader,
+                ((l_bracket)(identifier)(TokenHeaderRest_opt.lhs)(r_bracket))       (make_header)
             );
 
             DECL_SEQS(
                 TokenBody,
                 ((l_curly_bracket)(TopLevelSeqStatements.lhs)(r_curly_bracket))     (make_token_body)
+            );
+
+            DECL_SEQS(
+                GrammarHeader,
+                ((l_bracket)(identifier)(r_bracket))                                (make_header)
             );
             
             DECL_SEQS(
@@ -1072,7 +1163,7 @@ namespace kp19pp{
 
             DECL_SEQS(
                 Start,
-                ((Header.lhs)(TokenNamespace.lhs)(TokenBody.lhs)(Header.lhs)(GrammarNamespace.lhs)(GrammarBody.lhs))
+                ((TokenHeader.lhs)(TokenNamespace.lhs)(TokenBody.lhs)(GrammarHeader.lhs)(GrammarNamespace.lhs)(GrammarBody.lhs))
                                                                                     (eat)
             );
 
@@ -1234,12 +1325,12 @@ namespace kp19pp{
                     return false;
                 }
                 auto &action(find_result->second);
-                if(action.first == action_shift){
+                if(action.action_kind == action_shift){
                     term_stack.push_back(a);
-                    state_stack.push_back(action.second);
+                    state_stack.push_back(action.action_number);
                     value_stack.push_back(t);
                     ++iter;
-                }else if(action.first == action_reduce){
+                }else if(action.action_kind == action_reduce){
                     std::size_t norm = action.item->rhs->size();
                     term_stack.resize(term_stack.size() - norm);
                     state_stack.resize(state_stack.size() - norm);
@@ -1256,7 +1347,7 @@ namespace kp19pp{
                     state_stack.push_back(ref_parsing_table[s_prime].goto_fns->find(lhs)->second);
                     value_stack.push_back(ret_value);
                     put_fn(*action.item);
-                }else if(action.first == action_acc){
+                }else if(action.action_kind == action_acc){
                     break;
                 }
             }
@@ -1337,6 +1428,8 @@ namespace kp19pp{
             check_linked_nonterminal_symbol();
             normalize_token_order();
             collect_token();
+            caching_arg_type();
+            augment();
         }
     }
 }
