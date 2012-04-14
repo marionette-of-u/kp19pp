@@ -342,6 +342,8 @@ namespace kp19pp{
             DECL(value);
             DECL(comma);
             DECL(dot);
+            DECL(asterisk);
+            DECL(ampersand);
             DECL(double_colon);
             DECL(semicolon);
             DECL(l_square_bracket);
@@ -368,59 +370,6 @@ namespace kp19pp{
                     term_to_str_map[epsilon_functor()()] = "$";
                 }
             } end_of_seq_initializer;
-        }
-
-        namespace nonterminal_symbol{
-            namespace aux{
-                int current_nonterminal_symbol_id = 1;
-            }
-
-#define DECL(name) \
-    scanner_type::expression_type name; \
-    struct BOOST_PP_CAT(name, _initializer_type){ \
-        BOOST_PP_CAT(name, _initializer_type)(){ \
-            name.lhs = -(aux::current_nonterminal_symbol_id++); \
-            term_to_str_map[name.lhs] = BOOST_PP_STRINGIZE(name); \
-        } \
-    } BOOST_PP_CAT(name, _initializer);
-            DECL(StartPrime);
-            DECL(Start);
-            DECL(IdentifierSeq);
-            DECL(Type);
-            DECL(DoubleColon_opt);
-            DECL(NestIdentifier);
-            DECL(NestIdentifier_opt);
-            DECL(TemplateArg_opt);
-            DECL(TypeSeq_opt);
-            DECL(TypeSeqRest);
-            DECL(SymbolType_opt);
-            DECL(LHSType);
-            DECL(LinkDir);
-            DECL(BlockWithLinkDir);
-            DECL(SeqStatements);
-            DECL(SeqStatementsElement);
-            DECL(TopLevelSeqStatements);
-            DECL(TopLevelSeqStatementsElement);
-            DECL(Arg_opt);
-            DECL(SemanticAction);
-            DECL(SemanticActionElement_opt);
-            DECL(Tag_opt);
-            DECL(RHSSeqElement);
-            DECL(RHSSeq);
-            DECL(RHSSeq_opt);
-            DECL(RHS);
-            DECL(LHS);
-            DECL(Exp);
-            DECL(ExpStatements);
-            DECL(ExpStatementsRest);
-            DECL(TokenHeader);
-            DECL(TokenHeaderRest_opt);
-            DECL(GrammarHeader);
-            DECL(GrammarNamespace);
-            DECL(TokenNamespace);
-            DECL(TokenBody);
-            DECL(GrammarBody);
-#undef DECL
         }
 
         namespace semantic_action{
@@ -953,9 +902,59 @@ namespace kp19pp{
             }
         }
 
+        namespace{
+            term_type start_prime_lhs;
+        }
+
         void define_scanner_grammar(scanner_type &scanner){
+            term_type current_nonterminal_symbol_id = 1;
+#define DECL(name) \
+    scanner_type::expression_type name; \
+    ([&]() -> void{ \
+        name.lhs = -(current_nonterminal_symbol_id++); \
+        term_to_str_map[name.lhs] = BOOST_PP_STRINGIZE(name); \
+    })();
+            DECL(StartPrime);
+            DECL(Start);
+            DECL(IdentifierSeq);
+            DECL(Type);
+            DECL(DoubleColon_opt);
+            DECL(NestIdentifier);
+            DECL(NestIdentifier_opt);
+            DECL(TemplateArg_opt);
+            DECL(TypeSeq_opt);
+            DECL(TypeSeqRest);
+            DECL(SymbolType_opt);
+            DECL(LHSType);
+            DECL(LinkDir);
+            DECL(BlockWithLinkDir);
+            DECL(SeqStatements);
+            DECL(SeqStatementsElement);
+            DECL(TopLevelSeqStatements);
+            DECL(TopLevelSeqStatementsElement);
+            DECL(Arg_opt);
+            DECL(SemanticAction);
+            DECL(SemanticActionElement_opt);
+            DECL(Tag_opt);
+            DECL(RHSSeqElement);
+            DECL(RHSSeq);
+            DECL(RHSSeq_opt);
+            DECL(RHS);
+            DECL(LHS);
+            DECL(Exp);
+            DECL(ExpStatements);
+            DECL(ExpStatementsRest);
+            DECL(TokenHeader);
+            DECL(TokenHeaderRest_opt);
+            DECL(GrammarHeader);
+            DECL(GrammarNamespace);
+            DECL(TokenNamespace);
+            DECL(TokenBody);
+            DECL(GrammarBody);
+#undef DECL
+            start_prime_lhs = StartPrime.lhs;
+
             using namespace terminal_symbol;
-            using namespace nonterminal_symbol;
 #define PUSH_BACK(z, n, elem) rhs.push_back(BOOST_PP_SEQ_ELEM(n, elem));
 #define DECL(l, seq, sa) \
     { \
@@ -1208,6 +1207,8 @@ namespace kp19pp{
             F(value);
             F(comma);
             F(dot);
+            F(asterisk);
+            F(ampersand);
             F(double_colon);
             F(semicolon);
             F(l_square_bracket);
@@ -1256,6 +1257,8 @@ namespace kp19pp{
                         raw[(char_('1', '9') >> *char_('0', '9')) | char_('0')][f_value] |
                         raw[char_(',')][f_comma] |
                         raw[char_('.')][f_dot] |
+                        raw[char_('*')][f_asterisk] |
+                        raw[char_('&')][f_ampersand] |
                         raw[char_(':') >> char_(':')][f_double_colon] |
                         raw[char_(';')][f_semicolon] |
                         raw[char_('[')][f_l_square_bracket] |
@@ -1379,7 +1382,7 @@ namespace kp19pp{
             // options.put_log = true; // デバッグ用
 
             bool result = make_parsing_table(
-                nonterminal_symbol::StartPrime,
+                start_prime_lhs,
                 dummy_term,
                 options,
                 is_not_terminal,
