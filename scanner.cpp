@@ -438,6 +438,10 @@ namespace kp19pp{
                 return join_token(identifier, symbol_type);
             }
 
+            token_type make_reference_opt(const semantic_type::value_type &value, scanner_type &data){
+                return value[0];
+            }
+
             token_type make_type(const semantic_type::value_type &value, scanner_type &data){
                 auto &double_colon(value[0]);
                 auto &identifier(value[1]);
@@ -903,7 +907,7 @@ namespace kp19pp{
         }
 
         namespace{
-            term_type start_prime_lhs;
+            scanner_type::expression_type start_prime;
         }
 
         void define_scanner_grammar(scanner_type &scanner){
@@ -917,6 +921,8 @@ namespace kp19pp{
             DECL(StartPrime);
             DECL(Start);
             DECL(IdentifierSeq);
+            DECL(Reference_opt);
+            DECL(QualifiedType);
             DECL(Type);
             DECL(DoubleColon_opt);
             DECL(NestIdentifier);
@@ -952,7 +958,6 @@ namespace kp19pp{
             DECL(TokenBody);
             DECL(GrammarBody);
 #undef DECL
-            start_prime_lhs = StartPrime.lhs;
 
             using namespace terminal_symbol;
 #define PUSH_BACK(z, n, elem) rhs.push_back(BOOST_PP_SEQ_ELEM(n, elem));
@@ -978,6 +983,12 @@ namespace kp19pp{
                 ((identifier)(SymbolType_opt.lhs))                                  (identifier_seq_a)
                 ((IdentifierSeq.lhs)(comma)(identifier)(SymbolType_opt.lhs))        (identifier_seq_b)
             );
+
+            DECL_SEQS_EPS(
+                Reference_opt,
+                ((asterisk))                                                        (make_reference_opt)
+                ((ampersand))                                                       (make_reference_opt)
+            )
 
             DECL_SEQS(
                 Type,
@@ -1177,6 +1188,8 @@ namespace kp19pp{
 #undef DECL_EPS
 #undef DECL_SEQS
 #undef DECL_SEQS_EPS
+
+            start_prime = StartPrime;
         }
 
         // !!
@@ -1382,7 +1395,7 @@ namespace kp19pp{
             // options.put_log = true; // デバッグ用
 
             bool result = make_parsing_table(
-                start_prime_lhs,
+                start_prime,
                 dummy_term,
                 options,
                 is_not_terminal,
