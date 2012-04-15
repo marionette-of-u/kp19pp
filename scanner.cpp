@@ -1,26 +1,9 @@
-#if    defined(_MSC_VER) && (_MSC_VER >= 1400)
-    // !!
-    // boost::spirit::qi使用時に出てくる関数に対するconst/volatile修飾子無効の警告を抑制する.
-#    pragma warning(disable:4180)
-#endif
-
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <vector>
 #include <unordered_map>
 #include <cstdlib>
-#include <boost/preprocessor/cat.hpp>
-#include <boost/preprocessor/stringize.hpp>
-#include <boost/preprocessor/seq/size.hpp>
-#include <boost/preprocessor/seq/elem.hpp>
-#include <boost/preprocessor/arithmetic/inc.hpp>
-#include <boost/preprocessor/arithmetic/mul.hpp>
-#include <boost/preprocessor/arithmetic/div.hpp>
-#include <boost/range.hpp>
-#include <boost/spirit/include/qi.hpp>
-#include <boost/spirit/include/qi_parse.hpp>
-#include <boost/spirit/include/phoenix_operator.hpp>
 #include "scanner.hpp"
 #include "exception.hpp"
 
@@ -330,7 +313,6 @@ namespace kp19pp{
                 std::vector<term_type> terminal_symbol_data;
             }
 #define DECL(name) \
-    scanner_type::term_type name; \
     struct BOOST_PP_CAT(name, _initializer_type){ \
         BOOST_PP_CAT(name, _initializer_type)(){ \
             name = aux::current_terminal_symbol_id++; \
@@ -338,24 +320,7 @@ namespace kp19pp{
             term_to_str_map[name] = BOOST_PP_STRINGIZE(name); \
         } \
     } BOOST_PP_CAT(name, _initializer);
-            DECL(identifier);
-            DECL(value);
-            DECL(comma);
-            DECL(dot);
-            DECL(asterisk);
-            DECL(ampersand);
-            DECL(double_colon);
-            DECL(semicolon);
-            DECL(l_square_bracket);
-            DECL(r_square_bracket);
-            DECL(l_curly_bracket);
-            DECL(r_curly_bracket);
-            DECL(l_bracket);
-            DECL(r_bracket);
-            DECL(l_round_pare);
-            DECL(r_round_pare);
-            DECL(symbol_or);
-            DECL(symbol_colon);
+            KP19PP_SCANNER_DECL_TERMINAL_SYMBOLS();
 #undef DECL
             struct epsilon_initializer_type{
                 epsilon_initializer_type(){
@@ -438,11 +403,25 @@ namespace kp19pp{
                 return join_token(identifier, symbol_type);
             }
 
-            token_type make_reference_opt(const semantic_type::value_type &value, scanner_type &data){
+            token_type make_non_delim_identifier_seq_a(const semantic_type::value_type &value, scanner_type &data){
                 return value[0];
             }
 
-            token_type make_type(const semantic_type::value_type &value, scanner_type &data){
+            token_type make_non_delim_identifier_seq_b(const semantic_type::value_type &value, scanner_type &data){
+                auto &identifier_a(value[0]);
+                auto &identifier_b(value[1]);
+                return join_token(identifier_a, identifier_b);
+            }
+
+            token_type make_non_delim_identifier_seq_c(const semantic_type::value_type &value, scanner_type &data){
+                return value[0];
+            }
+
+            token_type make_non_delim_identifier_seq_opt(const semantic_type::value_type &value, scanner_type &data){
+                return value[0];
+            }
+
+            token_type make_type_a(const semantic_type::value_type &value, scanner_type &data){
                 auto &double_colon(value[0]);
                 auto &identifier(value[1]);
                 auto &template_arg(value[2]);
@@ -462,8 +441,22 @@ namespace kp19pp{
                 return r;
             }
 
-            token_type make_double_colon(const semantic_type::value_type &vec, scanner_type &data){
-                return vec[0];
+            token_type make_type_b(const semantic_type::value_type &value, scanner_type &data){
+                auto &type(value[0]);
+                auto &specifier(value[1]);
+                return join_token(type, specifier);
+            }
+
+            token_type make_reference_specifier(const semantic_type::value_type &value, scanner_type &data){
+                return value[0];
+            }
+
+            token_type make_reference_specifier_opt(const semantic_type::value_type &value, scanner_type &data){
+                return value[0];
+            }
+
+            token_type make_double_colon_opt(const semantic_type::value_type &value, scanner_type &data){
+                return value[0];
             }
 
             token_type make_nest_identifier_opt(const semantic_type::value_type &value, scanner_type &data){
@@ -496,6 +489,22 @@ namespace kp19pp{
                     r = join_token(r, nest_identifier_rest);
                 }
                 return r;
+            }
+
+            token_type make_template(const semantic_type::value_type &value, scanner_type &data){
+                auto &l_bracket(value[0]);
+                auto &arguments(value[1]);
+                auto &r_bracket(value[2]);
+                token_type r = l_bracket;
+                if(!arguments.value.empty()){
+                    r = join_token(r, arguments);
+                }
+                r = join_token(r, r_bracket);
+                return r;
+            }
+
+            token_type make_template_opt(const semantic_type::value_type &value, scanner_type &data){
+                return value[0];
             }
 
             token_type make_template_arg(const semantic_type::value_type &value, scanner_type &data){
@@ -921,12 +930,16 @@ namespace kp19pp{
             DECL(StartPrime);
             DECL(Start);
             DECL(IdentifierSeq);
-            DECL(Reference_opt);
-            DECL(QualifiedType);
+            DECL(NonDelimIdentifierSeq);
+            DECL(NonDelimIdentifierSeq_opt);
             DECL(Type);
+            DECL(ReferenceSpecifier);
+            DECL(ReferenceSpecifier_opt);
             DECL(DoubleColon_opt);
             DECL(NestIdentifier);
             DECL(NestIdentifier_opt);
+            DECL(Template);
+            DECL(Template_opt);
             DECL(TemplateArg_opt);
             DECL(TypeSeq_opt);
             DECL(TypeSeqRest);
@@ -984,21 +997,40 @@ namespace kp19pp{
                 ((IdentifierSeq.lhs)(comma)(identifier)(SymbolType_opt.lhs))        (identifier_seq_b)
             );
 
+            DECL_SEQS(
+                NonDelimIdentifierSeq,
+                ((identifier)(ReferenceSpecifier_opt.lhs))                          (make_non_delim_identifier_seq_a)
+                ((NonDelimIdentifierSeq.lhs)(identifier)(ReferenceSpecifier_opt.lhs))
+                                                                                    (make_non_delim_identifier_seq_b)
+                ((ReferenceSpecifier.lhs))                                          (make_non_delim_identifier_seq_c)
+            );
+
             DECL_SEQS_EPS(
-                Reference_opt,
-                ((asterisk))                                                        (make_reference_opt)
-                ((ampersand))                                                       (make_reference_opt)
-            )
+                NonDelimIdentifierSeq_opt,
+                ((NonDelimIdentifierSeq.lhs))                                       (make_non_delim_identifier_seq_opt)
+            );
 
             DECL_SEQS(
                 Type,
-                ((DoubleColon_opt.lhs)(identifier)(TemplateArg_opt.lhs)(NestIdentifier_opt.lhs))
-                                                                                    (make_type)
+                ((DoubleColon_opt.lhs)(NonDelimIdentifierSeq.lhs)(Template_opt.lhs)(NestIdentifier_opt.lhs))
+                                                                                    (make_type_a)
+                ((Type.lhs)(NonDelimIdentifierSeq.lhs))                             (make_type_b)
+            );
+
+            DECL_SEQS(
+                ReferenceSpecifier,
+                ((asterisk))                                                        (make_reference_specifier)
+                ((ampersand))                                                       (make_reference_specifier)
+            );
+
+            DECL_SEQS_EPS(
+                ReferenceSpecifier_opt,
+                ((ReferenceSpecifier.lhs))                                          (make_reference_specifier_opt)
             );
 
             DECL_SEQS_EPS(
                 DoubleColon_opt,
-                ((double_colon))                                                    (make_double_colon)
+                ((double_colon))                                                    (make_double_colon_opt)
             );
 
             DECL_SEQS_EPS(
@@ -1008,16 +1040,25 @@ namespace kp19pp{
 
             DECL_SEQS(
                 NestIdentifier,
-                ((double_colon)(identifier)(TemplateArg_opt.lhs))                   (make_nest_identifier_a)
-                ((dot)(identifier)(TemplateArg_opt.lhs))                            (make_nest_identifier_a)
-                ((NestIdentifier.lhs)(double_colon)(identifier)(TemplateArg_opt.lhs))
-                                                                                    (make_nest_identifier_b)
-                ((NestIdentifier.lhs)(dot)(identifier)(TemplateArg_opt.lhs))        (make_nest_identifier_b)
+                ((double_colon)(identifier)(Template_opt.lhs))                      (make_nest_identifier_a)
+                ((dot)(identifier)(Template_opt.lhs))                               (make_nest_identifier_a)
+                ((NestIdentifier.lhs)(double_colon)(identifier)(Template_opt.lhs))  (make_nest_identifier_b)
+                ((NestIdentifier.lhs)(dot)(identifier)(Template_opt.lhs))           (make_nest_identifier_b)
+            );
+
+            DECL_SEQS(
+                Template,
+                ((l_bracket)(TemplateArg_opt.lhs)(r_bracket))                       (make_template)
+            );
+
+            DECL_SEQS_EPS(
+                Template_opt,
+                ((Template.lhs))                                                    (make_template_opt)
             );
 
             DECL_SEQS_EPS(
                 TemplateArg_opt,
-                ((l_bracket)(TypeSeq_opt.lhs)(r_bracket))                           (make_template_arg)
+                ((Type.lhs))                                                        (make_template_arg)
             );
 
             DECL_SEQS_EPS(
@@ -1192,119 +1233,6 @@ namespace kp19pp{
             start_prime = StartPrime;
         }
 
-        // !!
-        // マルチスレッド未対応
-        class lexer{
-        public:
-            lexer(scanner_type::token_seq_type &token_seq_){
-                resert(&token_seq_);
-            }
-
-            void resert(scanner_type::token_seq_type *token_seq_){
-                char_count() = 0;
-                line_count() = 0;
-                token_seq() = token_seq_;
-            }
-
-        private:
-#define F(name) \
-    static void f_ ## name( \
-        const boost::iterator_range<scanner_string_type::const_iterator> &range, \
-        const boost::spirit::qi::unused_type&, \
-        bool \
-    ){ \
-        token_seq()->push_back(scanner_type::token_type(string_iter_pair_type(range.begin(), range.end()), terminal_symbol::name, char_count(), line_count())); \
-        char_count() += range.size(); \
-    }
-            F(identifier);
-            F(value);
-            F(comma);
-            F(dot);
-            F(asterisk);
-            F(ampersand);
-            F(double_colon);
-            F(semicolon);
-            F(l_square_bracket);
-            F(r_square_bracket);
-            F(l_curly_bracket);
-            F(r_curly_bracket);
-            F(l_bracket);
-            F(r_bracket);
-            F(l_round_pare);
-            F(r_round_pare);
-            F(symbol_or);
-            F(symbol_colon);
-#undef F
-            static void f_whitespace(
-                const boost::iterator_range<scanner_string_type::const_iterator> &range,
-                const boost::spirit::qi::unused_type&,
-                bool
-            ){ char_count() += range.size(); }
-
-            static void f_end_of_line(
-                const boost::iterator_range<scanner_string_type::const_iterator> &range,
-                const boost::spirit::qi::unused_type&,
-                bool
-            ){
-                char_count() = 0;
-                ++line_count();
-            }
-
-        public:
-            void tokenize(std::istream &in, scanner_string_type &str){
-                using namespace boost::spirit;
-                using namespace boost::spirit::qi;
-                {
-                    std::string str_;
-                    std::getline(in, str_, '\0');
-                    str.reserve(str_.size());
-                    str.assign(str_.begin(), str_.end());
-                }
-                for(auto iter = str.begin(), end = str.end(); iter != end; ){
-                    if(!parse(
-                        iter, end,
-                        raw[+(char_(' ') | char_('\t'))][f_whitespace] |
-                        raw[char_('\n')][f_end_of_line] |
-                        raw[char_('/') >> char_('/') >> *(char_ - char_('\n')) >> char_('\n')][f_end_of_line] |
-                        raw[(char_('a', 'z') | char_('A', 'Z') | char_('_')) >> *(char_('a', 'z') | char_('A', 'Z') | char_('0', '9') | char_('_'))][f_identifier] |
-                        raw[(char_('1', '9') >> *char_('0', '9')) | char_('0')][f_value] |
-                        raw[char_(',')][f_comma] |
-                        raw[char_('.')][f_dot] |
-                        raw[char_('*')][f_asterisk] |
-                        raw[char_('&')][f_ampersand] |
-                        raw[char_(':') >> char_(':')][f_double_colon] |
-                        raw[char_(';')][f_semicolon] |
-                        raw[char_('[')][f_l_square_bracket] |
-                        raw[char_(']')][f_r_square_bracket] |
-                        raw[char_('{')][f_l_curly_bracket] |
-                        raw[char_('}')][f_r_curly_bracket] |
-                        raw[char_('<')][f_l_bracket] |
-                        raw[char_('>')][f_r_bracket] |
-                        raw[char_('(')][f_l_round_pare] |
-                        raw[char_(')')][f_r_round_pare] |
-                        raw[char_('|')][f_symbol_or] |
-                        raw[char_(':')][f_symbol_colon]
-                    )){ throw(exception("字句解析エラー.", char_count(), line_count())); }
-                }
-            }
-
-        private:
-            static std::size_t &char_count(){
-                static std::size_t value;
-                return value;
-            }
-            
-            static std::size_t &line_count(){
-                static std::size_t value;
-                return value;
-            }
-            
-            static scanner_type::token_seq_type *&token_seq(){
-                static scanner_type::token_seq_type *ptr;
-                return ptr;
-            }
-        };
-
         void scanner_type::define_grammar(scanner_type &scanner){
             static bool flag = true;
             if(flag){
@@ -1446,6 +1374,12 @@ namespace kp19pp{
             collect_token();
             caching_arg_type();
             augment();
+        }
+
+        namespace terminal_symbol{
+#define DECL(name) scanner_type::term_type name;
+            KP19PP_SCANNER_DECL_TERMINAL_SYMBOLS();
+#undef DECL
         }
     }
 }

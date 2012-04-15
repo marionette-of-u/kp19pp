@@ -4,6 +4,13 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <boost/preprocessor/cat.hpp>
+#include <boost/preprocessor/stringize.hpp>
+#include <boost/preprocessor/seq/size.hpp>
+#include <boost/preprocessor/seq/elem.hpp>
+#include <boost/preprocessor/arithmetic/inc.hpp>
+#include <boost/preprocessor/arithmetic/mul.hpp>
+#include <boost/preprocessor/arithmetic/div.hpp>
 #include "kp19pp.hpp"
 #include "common.hpp"
 
@@ -205,6 +212,47 @@ namespace kp19pp{
             std::size_t         current_rhs_number;
             bool                scanned_first_nonterminal_symbol;
         };
+
+#define KP19PP_SCANNER_DECL_TERMINAL_SYMBOLS() \
+    DECL(identifier); \
+    DECL(value); \
+    DECL(comma); \
+    DECL(dot); \
+    DECL(asterisk); \
+    DECL(ampersand); \
+    DECL(double_colon); \
+    DECL(semicolon); \
+    DECL(l_square_bracket); \
+    DECL(r_square_bracket); \
+    DECL(l_curly_bracket); \
+    DECL(r_curly_bracket); \
+    DECL(l_bracket); \
+    DECL(r_bracket); \
+    DECL(l_round_pare); \
+    DECL(r_round_pare); \
+    DECL(symbol_or); \
+    DECL(symbol_colon);
+
+        class lexer{
+        public:
+            lexer(scanner_type::token_seq_type &token_seq_);
+            void reset(scanner_type::token_seq_type *token_seq_);
+
+        public:
+            void tokenize(std::istream &in, scanner_string_type &str);
+            static std::size_t &char_count();
+            static std::size_t &line_count();
+            static scanner_type::token_seq_type *&token_seq();
+        };
+
+        extern lexer *lex;
+
+        namespace terminal_symbol{
+#define DECL(name) \
+    extern scanner_type::term_type name;
+            KP19PP_SCANNER_DECL_TERMINAL_SYMBOLS();
+#undef DECL
+        }
     }
 }
 

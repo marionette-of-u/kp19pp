@@ -203,7 +203,7 @@ private:
 
     bool call_0_make_l_b(int nonterminal_index, int base, int arg_index0)
     {
-        type_id arg0; sa_.downcast(arg0, get_arg(base, arg_index0));
+        const type_id<::test::test::test<const volatile type_id*const*const*>::test<>*const*const*const>*const*const*const arg0; sa_.downcast(arg0, get_arg(base, arg_index0));
         type_l r = sa_.make_l_b(arg0)
         value_type v; sa_.upcast(v, r);
         pop_stack(base);

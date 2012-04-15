@@ -1,5 +1,5 @@
 <token_asc> token{
-    eq, ast, id<type_id>;
+    eq, ast, id<const type_id<::test::test::test<const volatile type_id*const*const*>::test<>*const*const*const>*const*const*const>;
 }
 
 <grammar> grammar{
