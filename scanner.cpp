@@ -941,7 +941,7 @@ namespace kp19pp{
             DECL(Template);
             DECL(Template_opt);
             DECL(TemplateArg_opt);
-            DECL(TypeSeq_opt);
+            DECL(TypeSeq);
             DECL(TypeSeqRest);
             DECL(SymbolType_opt);
             DECL(LHSType);
@@ -1058,11 +1058,11 @@ namespace kp19pp{
 
             DECL_SEQS_EPS(
                 TemplateArg_opt,
-                ((Type.lhs))                                                        (make_template_arg)
+                ((TypeSeq.lhs))                                                     (make_template_arg)
             );
 
-            DECL_SEQS_EPS(
-                TypeSeq_opt,
+            DECL_SEQS(
+                TypeSeq,
                 ((Type.lhs))                                                        (make_type_seq)
                 ((Type.lhs)(TypeSeqRest.lhs))                                       (make_type_seq)
             );
