@@ -417,10 +417,6 @@ namespace kp19pp{
                 return value[0];
             }
 
-            token_type make_non_delim_identifier_seq_opt(const semantic_type::value_type &value, scanner_type &data){
-                return value[0];
-            }
-
             token_type make_type_a(const semantic_type::value_type &value, scanner_type &data){
                 auto &double_colon(value[0]);
                 auto &identifier(value[1]);
@@ -931,7 +927,6 @@ namespace kp19pp{
             DECL(Start);
             DECL(IdentifierSeq);
             DECL(NonDelimIdentifierSeq);
-            DECL(NonDelimIdentifierSeq_opt);
             DECL(Type);
             DECL(ReferenceSpecifier);
             DECL(ReferenceSpecifier_opt);
@@ -1003,11 +998,6 @@ namespace kp19pp{
                 ((NonDelimIdentifierSeq.lhs)(identifier)(ReferenceSpecifier_opt.lhs))
                                                                                     (make_non_delim_identifier_seq_b)
                 ((ReferenceSpecifier.lhs))                                          (make_non_delim_identifier_seq_c)
-            );
-
-            DECL_SEQS_EPS(
-                NonDelimIdentifierSeq_opt,
-                ((NonDelimIdentifierSeq.lhs))                                       (make_non_delim_identifier_seq_opt)
             );
 
             DECL_SEQS(
