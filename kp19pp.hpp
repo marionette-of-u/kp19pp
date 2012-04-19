@@ -726,11 +726,13 @@ namespace kp19pp{
             terminal_symbol_linkdir ref_nonassoc(nonassoc);
             auto rhs_priority = [&](const typename expression_type::rhs_type *rhs) -> std::pair<std::size_t, std::size_t>{
                 std::pair<std::size_t, std::size_t> p = std::make_pair(0, ref_nonassoc);
-                for(auto iter = rhs->rbegin(), end = rhs->rend(); iter != end; ++iter){
+                for(auto iter = rhs->begin(), end = rhs->end(); iter != end; ++iter){
                     const term_type &term(*iter);
                     if(!is_not_terminal(expression_set, term)){
                         auto &data(terminal_data_map.find(term)->second);
-                        p = std::make_pair(data.priority, data.linkdir);
+                        if(data.priority > p.first){
+                            p = std::make_pair(data.priority, data.linkdir);
+                        }
                     }
                 }
                 return p;
@@ -782,19 +784,24 @@ namespace kp19pp{
                                     if(tag_p == epsilon){
                                         p = rhs_priority(act.item->rhs);
                                     }else{
-                                        auto &x(terminal_data_map.find(tag_p)->second);
-                                        p = std::make_pair(x.priority, x.linkdir);
+                                        p = std::make_pair(0, nonassoc);
                                     }
                                     const auto &tag_q(other_act.item->rhs->tag());
                                     if(tag_q == epsilon){
                                         q = rhs_priority(other_act.item->rhs);
                                     }else{
-                                        auto &x(terminal_data_map.find(tag_q)->second);
-                                        q = std::make_pair(x.priority, x.linkdir);
+                                        q = std::make_pair(0, nonassoc);
                                     }
-                                    if(p.first > q.first || (p.first == q.first && p.second == left)){
+                                    if(p.first > q.first){
                                         actions_i.erase(ret.first);
                                         actions_i.insert(std::make_pair(term, act));
+                                    }else if(p.first == q.first){
+                                        if(p.second == left){
+                                            actions_i.erase(ret.first);
+                                            actions_i.insert(std::make_pair(term, act));
+                                        }else if(p.second == right){
+                                            /* shift */
+                                        }
                                     }
                                 }else{
                                     append_conflict(other_act, act);
@@ -829,12 +836,16 @@ namespace kp19pp{
                                 }else{
                                     p = rhs_priority(act.item->rhs);
                                 }
-                                auto &q(terminal_data_map.find(act.item->lhs)->second);
-                                if(p.first > q.priority || (p.first == q.priority && p.second == left)){
-                                    /* empty */
-                                }else{
-                                    actions_i.erase(ret.first);
-                                    actions_i.insert(std::make_pair(a, act));
+                                auto &q(terminal_data_map.find(ret.first->first)->second);
+                                if(p.first > q.priority){
+                                    /* reduce */
+                                }else if(p.first == q.priority){
+                                    if(p.second == left){
+                                        /* reduce */
+                                    }else if(p.second == right){
+                                        actions_i.erase(ret.first);
+                                        actions_i.insert(std::make_pair(a, act));
+                                    }
                                 }
                             }else{
                                 append_conflict(ret.first->second, act);
