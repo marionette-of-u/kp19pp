@@ -93,18 +93,26 @@ namespace kp19pp{
     }
 
     std::string commandline_options_type::ifile_name() const{
+        return file_name(ifile_path_);
+    }
+
+    const std::string &commandline_options_type::ofile_path() const{
+        return ofile_path_;
+    }
+
+    std::string commandline_options_type::ofile_name() const{
+        return file_name(ofile_path_);
+    }
+
+    std::string commandline_options_type::file_name(const std::string &str) const{
         std::string ret;
-        for(std::size_t i = 0, length = ifile_path_.length(); i < length; ++i){
-            char c = ifile_path_[length - i - 1];
+        for(std::size_t i = 0, length = str.size(); i < length; ++i){
+            char c = str[length - i - 1];
             if(c == '/' || c == '\\'){ break; }
             ret += c;
         }
         std::reverse(ret.begin(), ret.end());
         return ret;
-    }
-
-    const std::string &commandline_options_type::ofile_path() const{
-        return ofile_path_;
     }
 
     commandline_options_type::language_enum commandline_options_type::language() const{

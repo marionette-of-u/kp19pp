@@ -1,5 +1,5 @@
-#ifndef IFILE_TXT_
-#define IFILE_TXT_
+#ifndef OFILE_HPP_
+#define OFILE_HPP_
 
 #include <cstdlib>
 #include <cassert>
@@ -479,4 +479,4 @@ private:
 
 } // namespace grammar
 
-#endif // IFILE_TXT_
+#endif // OFILE_HPP_

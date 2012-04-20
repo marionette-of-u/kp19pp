@@ -42,7 +42,7 @@ namespace kp19pp{
         ){
             indent_type indent_1(commandline_options.indent(), 1);
 
-            std::string headername = commandline_options.ifile_name();
+            std::string headername = commandline_options.ofile_name();
             for(std::string::iterator i = headername.begin(); i != headername.end(); ++i){
                 if(!std::isalpha(*i) && !std::isdigit(*i)){
                     *i = '_';

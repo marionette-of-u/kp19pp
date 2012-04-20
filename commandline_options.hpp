@@ -25,10 +25,12 @@ namespace kp19pp{
         const std::string &ifile_path() const;
         std::string ifile_name() const;
         const std::string &ofile_path() const;
+        std::string ofile_name() const;
         language_enum language() const;
         indent_enum indent() const;
 
     private:
+        std::string file_name(const std::string &str) const;
         std::string ifile_path_, ofile_path_;
         language_enum language_;
         indent_enum indent_;
