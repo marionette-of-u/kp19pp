@@ -20,7 +20,7 @@ namespace kp19pp{
         }
     }
 
-    bool commandline_options_type::get(int argc, const char **argv){
+    bool commandline_options_type::get(int argc, char **argv){
         int state = 0;
         for(int index = 1; index < argc; ++index){
             if(argv[index][0] == '-'){

@@ -5,15 +5,15 @@
 #include "scanner.hpp"
 #include "target.hpp"
 
-int main(){
-    int argc = 5;
-    const char *argv[] = {
-        "dummy.exe",
-        "-c++",
-        "-indent=space",
-        "ifile.txt",
-        "ofile.hpp"
-    };
+int main(int argc, char **argv){
+    //int argc = 5;
+    //const char *argv[] = {
+    //    "dummy.exe",
+    //    "-c++",
+    //    "-indent=space",
+    //    "ifile.txt",
+    //    "ofile.hpp"
+    //};
 
     try{
         kp19pp::commandline_options_type commandline_options;

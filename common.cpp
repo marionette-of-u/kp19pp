@@ -1,4 +1,5 @@
 #include <sstream>
+#include <algorithm>
 #include "kp19pp.hpp"
 #include "common.hpp"
 
@@ -49,16 +50,7 @@ namespace kp19pp{
     }
 
     bool string_iter_pair_type::operator <(const string_iter_pair_type &other) const{
-        bool a = begin() == end(), b = other.begin() == other.end();
-        if(a && !b){
-            return true;
-        }else if(!a && b || a && b){
-            return false;
-        }
-        auto iter = begin(), other_iter = other.begin();
-        auto last = end() - 1;
-        for(; *iter == *other_iter && iter != last; ++iter, ++other_iter);
-        return *reinterpret_cast<const unsigned char*>(&*iter) - *reinterpret_cast<const unsigned char*>(&*other_iter) < 0;
+        return std::lexicographical_compare(begin(), end(), other.begin(), other.end());
     }
 
     scanner_string_type &string_iter_pair_type::dummy_strage(){

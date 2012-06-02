@@ -1,6 +1,5 @@
 #include <list>
 #include <sstream>
-#include <memory>
 #include <cstdio>
 #include <cctype>
 #include <boost/tuple/tuple.hpp>
@@ -64,6 +63,8 @@ namespace kp19pp{
             // namespace header
             os << "namespace " << scanner.namespace_grammar << "{\n\n";
 
+            std::string namespace_token = scanner.namespace_token.size() > 0 ? scanner.namespace_token.to_string() + std::string("_") : std::string("token_");
+
             if(!scanner.external_token){
                 // token enumeration
                 if(scanner.namespace_token.empty()){
@@ -73,10 +74,10 @@ namespace kp19pp{
                 }
                 for(std::size_t i = 0; i < scanner.number_to_token_map.size(); ++i){
                     auto find_ret(scanner.number_to_token_map.find(i)->second);
-                    os << indent_1 << scanner.namespace_token << "_" << find_ret.value << ",";
+                    os << indent_1 << namespace_token << find_ret.value << ",";
                     os << "\n";
                 }
-                os << indent_1 << scanner.namespace_token << "_" << "0\n"
+                os << indent_1 << namespace_token << "0\n"
                    << "};\n\n";
             }
 
@@ -168,7 +169,7 @@ namespace kp19pp{
 
             // public interface
             os << "public:\n"
-               << indent_1 << "typedef Token token_type;\n"
+               << indent_1 << "typedef " << (scanner.external_token ? "Token" : scanner.namespace_token.size() > 0 ? scanner.namespace_token.to_string().c_str() : "token") << " token_type;\n"
                << indent_1 << "typedef Value value_type;\n"
                << "\n"
                << "public:\n"
@@ -360,7 +361,7 @@ namespace kp19pp{
                             if(first){ first = false; }else{ os << ", "; }
                             os << "arg" << i;
                         }
-                        os << ")\n";
+                        os << ");\n";
 
                         // automatic return value conversion
                         os << indent_1 << indent_1
@@ -483,10 +484,10 @@ namespace kp19pp{
                     {
                         auto find_ret = scanner.term_to_token_map.find(action.first);
                         if(find_ret == scanner.term_to_token_map.end()){
-                            case_tag = scanner.namespace_token.to_string() + "_0";
+                            case_tag = namespace_token + "0";
                         }else{
                             auto &token_name(find_ret->second.value);
-                            case_tag = scanner.namespace_token.to_string() + "_" + token_name.to_string();
+                            case_tag = namespace_token + token_name.to_string();
                         }
                     }
 
