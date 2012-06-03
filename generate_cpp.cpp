@@ -298,6 +298,7 @@ namespace kp19pp{
                         auto &action(action_iter->second);
                         if(action.action_kind != action_reduce){ continue; }
                         auto &semantic(action.item->rhs->semantic);
+                        if(semantic.action->empty()){ continue; }
 
                         // make signature
                         std::vector<string_iter_pair_type> signature;
@@ -520,7 +521,7 @@ namespace kp19pp{
                                 );
                             }
 
-                            if(item.rhs->semantic.action){
+                            if(!item.rhs->semantic.action->empty()){
                                 auto semantic_aciton = *item.rhs->semantic.action;
                                     
                                 std::vector<string_iter_pair_type> signature = make_signature(
@@ -604,6 +605,8 @@ namespace kp19pp{
                     std::size_t nonterminal_index = key.get<1>();
                     std::size_t base = key.get<2>();
                     auto &arg_indices(key.get<3>());
+
+                    if(signature[0].empty()){ continue; }
 
                     for(std::size_t i = 0, i_length = cases.size(); i < i_length; ++i){
                         os << indent_1 << indent_1 << "case " << cases[i] << ":\n";
