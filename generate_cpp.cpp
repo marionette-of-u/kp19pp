@@ -537,11 +537,7 @@ namespace kp19pp{
                                     i < i_length;
                                     ++i
                                 ){
-                                    arg_indices.push_back(
-                                        lexical_cast(
-                                            argindex_to_symbol_map.find(i)->second.number.value.to_string()
-                                        )
-                                    );
+                                    arg_indices.push_back(argindex_to_symbol_map.find(i)->second.src_index);
                                 }
 
                                 reduce_action_cache_key_type key =

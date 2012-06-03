@@ -155,6 +155,7 @@ namespace kp19pp{
             current_terminal_symbol_id(1),
             current_nonterminal_symbol_id(2),
             current_rhs_number(0),
+            current_rhs_arg_number(0),
             external_token(false),
             scanned_first_nonterminal_symbol(false)
         {}
@@ -171,8 +172,13 @@ namespace kp19pp{
             return current_rhs_number++;
         }
 
+        std::size_t scanner_type::next_rhs_arg_number(){
+            return current_rhs_arg_number++;
+        }
+
         void scanner_type::clear_rhs_number(){
             current_rhs_number = 0;
+            current_rhs_arg_number = 0;
         }
 
         bool scanner_type::get_scanned_first_nonterminal_symbol() const{
@@ -591,7 +597,6 @@ namespace kp19pp{
 
             token_type make_top_level_seq_statements_element_a(const semantic_type::value_type &value, scanner_type &data){
                 auto &identifier(value[0]);
-                identifier.value;
                 for(
                     auto iter = data.current_terminal_symbol_seq.begin(), end = data.current_terminal_symbol_seq.end();
                     iter != end;
@@ -669,6 +674,7 @@ namespace kp19pp{
                     scanner_type::nonterminal_symbol_data_type::rhs_type::arg_data_type arg_data;
                     arg_data.symbol = symbol;
                     arg_data.number = arg;
+                    arg_data.src_index = data.next_rhs_arg_number();
                     if(!rhs.argindex_to_symbol_map.insert(std::make_pair(arg_index, arg_data)).second){
                         throw(
                             exception(
