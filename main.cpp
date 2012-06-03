@@ -7,7 +7,7 @@
 
 int main(int argc, char **argv){
     //int argc = 5;
-    //const char *argv[] = {
+    //char *argv[] = {
     //    "dummy.exe",
     //    "-c++",
     //    "-indent=space",

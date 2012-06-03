@@ -173,12 +173,19 @@ namespace kp19pp{
         }
 
         std::size_t scanner_type::next_rhs_arg_number(){
-            return current_rhs_arg_number++;
+            return current_rhs_arg_number;
+        }
+
+        void scanner_type::inc_current_rhs_arg_number(){
+            ++current_rhs_arg_number;
+        }
+
+        void scanner_type::clear_current_rhs_arg_number(){
+            current_rhs_arg_number = 0;
         }
 
         void scanner_type::clear_rhs_number(){
             current_rhs_number = 0;
-            current_rhs_arg_number = 0;
         }
 
         bool scanner_type::get_scanned_first_nonterminal_symbol() const{
@@ -717,11 +724,15 @@ namespace kp19pp{
             }
 
             token_type make_rhs_seq(const semantic_type::value_type &value, scanner_type &data){
-                return insert_rhs_element(value[0], value[1], value, data);
+                token_type r = insert_rhs_element(value[0], value[1], value, data);
+                data.inc_current_rhs_arg_number();
+                return r;
             }
 
             token_type make_rhs_seq_last(const semantic_type::value_type &value, scanner_type &data){
-                return insert_rhs_element(value[1], value[2], value, data);
+                token_type r = insert_rhs_element(value[1], value[2], value, data);
+                data.inc_current_rhs_arg_number();
+                return r;
             }
 
             token_type make_rhs_seq_opt(const semantic_type::value_type &value, scanner_type &data){
@@ -778,6 +789,7 @@ namespace kp19pp{
                     }
                 }
                 data.current_rhs.clear();
+                data.clear_current_rhs_arg_number();
                 return eat(value, data);
             }
 

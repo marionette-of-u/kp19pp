@@ -174,8 +174,10 @@ namespace kp19pp{
             term_type next_terminal_symbol_id();
             term_type next_nonterminal_symbol_id();
             std::size_t next_rhs_number();
-            std::size_t next_rhs_arg_number();
             void clear_rhs_number();
+            std::size_t next_rhs_arg_number();
+            void inc_current_rhs_arg_number();
+            void clear_current_rhs_arg_number();
             bool get_scanned_first_nonterminal_symbol() const;
             void set_scanned_first_nonterminal_symbol();
 
