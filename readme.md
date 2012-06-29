@@ -1,57 +1,51 @@
 # 概要
 LALR(1) パーサジェネレータです。  
 継承元プロジェクト caper（<http://caper.googlecode.com/svn/trunk/caper/site/caper.html>）
+<b><i></i></b>
 
-# 書式
+# 入力
 
-## 終端記号定義部
+## フォーマット
+&lt; <b><i>token-header</i></b> &gt; <b><i>token-prefix</i></b> {  
+&nbsp;&nbsp;&nbsp;&nbsp;&lt; <b><i>link-direction</i></b> &gt;{  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><i>terminal-symbol</i></b> &lt; <b><i>terminal-symbol-type</i></b> &gt; , ..., <b><i>terminal-symbol</i></b> &lt; <b><i>terminal-symbol-type</i></b> &gt; ;  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><i>terminal-symbol</i></b> &lt; <b><i>terminal-symbol-type</i></b> &gt; , ..., <b><i>terminal-symbol</i></b> &lt; <b><i>terminal-symbol-type</i></b> &gt; ;  
+&nbsp;&nbsp;&nbsp;&nbsp;}  
+&nbsp;&nbsp;&nbsp;&nbsp;<b><i>terminal-symbol</i></b> &lt; <b><i>terminal-symbol-type</i></b> &gt; , ..., <b><i>terminal-symbol</i></b> &lt; <b><i>terminal-symbol-type</i></b> &gt; ;  
+&nbsp;&nbsp;&nbsp;&nbsp;...  
+&nbsp;&nbsp;&nbsp;&nbsp;<b><i>terminal-symbol</i></b> &lt; <b><i>terminal-symbol-type</i></b> &gt; , ..., <b><i>terminal-symbol</i></b> &lt; <b><i>terminal-symbol-type</i></b> &gt; ;  
+}  
 
-    <token_desc> token{
-        <right>{ unary_minus; }
+&lt; <b><i>grammar-header</i></b> &gt; <b><i>namespace</i></b> {  
+&nbsp;&nbsp;&nbsp;&nbsp;<b><i>nonterminal-symbol</i></b> &lt; <b><i>nonterminal-symbol-type</i></b> &gt;  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: [ <b><i>semantic-action</i></b> ] <b><i>symbol</i></b> ( <b><i>arg-num</i></b> ) , ..., <b><i>symbol</i></b> ( <b><i>arg-num</i></b> )   
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| [ <b><i>semantic-action</i></b> ] <b><i>symbol</i></b> ( <b><i>arg-num</i></b> ) , ..., <b>
+<i>symbol</i></b> ( <b><i>arg-num</i></b> )   
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| [ <b><i>semantic-action</i></b> ] <b><i>symbol</i></b> ( <b><i>arg-num</i></b> ) , ..., <b>
+<i>symbol</i></b> ( <b><i>arg-num</i></b> )   
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;  
+}  
 
-        <left>{
-            ast;
-            pls, mns;
-        }
+##終端記号定義部
+カンマで記号を区切る事により、同じ優先順位の終端記号を定義する。  
+セミコロンで列を区切る事により、次の優先順位の終端記号を定義する。  
+&lt; <b><i>terminal-symbol-type</i></b> &gt;は必須ではない。  
 
-        l_paren, r_paren;
-        id<int>;
-    }
-一行ずつ見ていきましょう。  
-`<token_desc> token`  
-ここでは「終端記号のトークンの宣言を、優先順位に関して降順に（`<token_desc>`）」「トークンのenum及びprefixを`token`」に指定しています。  
-他の設定の余地として、`<token_asc>`（優先順位を昇順）、token部を`hogehoge`や`piyopiyo`などの好きな文字列にできます。  
-`<right>{ unary_minus; }`  
-ここでは、中括弧内部に現れる終端記号の結合方向を右に設定しています。また、今回の`unary_minus`というトークンは、それ自体が直接構文の中で使われる記号でなくても構いません。実際、この`unary_minus`は構文定義内で優先順位を変更するためだけに使用されます。  
-`<left>{`  
-これも`<right>`と同様、中括弧内に現れる終端記号を左結合に指定するために記述しています。  
-`ast;`  
-`pls, mns;`  
-この三つの終端記号にはそれぞれ、行末にセミコロンが記述されています。終端記号をセミコロンで区切ると、優先順位を変更する事ができます。  
-今回では`<token_desc>`と降順になっているので優先順位は`ast > pls = mns`になります。  
-`l_paren, r_paren;`はそれぞれ、左丸括弧、右丸括弧です。    
-`id<int>;`は`int`型の値を持つ終端記号です。終端記号が値を持っていると、セマンティックアクションに引数として使えます。
+- token-header  
+"token_desc"もしくは"token_asc"。前者の場合、終端記号定義部での終端記号優先順位は降順に、後者の場合は昇順になる。  
+ 
+- token-prefix  
+アルファベットもしくはアンダースコアから始まり、0文字以上のアルファベットもしくはアンダースコア、数字が続く文字列。  
+トークンのenumの型名及びトークンのprefixとなる。省略すると自動的に"token"に設定される。
 
-## 文法定義部
+- link-direction  
+"left"もしくは"right"。終端記号の結合方向を定める。
 
-    <grammar> grammar{
-        E<int>
-            : [make_pls] E(0) pls E(1)
-            | [make_sub] E(0) mns E(1)
-            | [make_mlt] E(0) ast E(1)
-            | [make_exp] l_paren E(0) r_paren
-            | [make_ums] <unary_minus> mns E(0)
-            | [make_id]  id(0)
-            ;
-    }
-`<grammar> grammar`において、山括弧で囲まれた部分は「文法を定義する」というヘッダの記述であり必須です。  
-その次の`grammar`が、出力された時にパーサーを囲う名前空間となります。  
-`E<int>`  
-ここで非終端記号Eの定義を行います。非終端記号には値を表す型が必須になっています。ここではint型を想定しているので`<int>`となっています。  
-`[make_pls] E(0) pls E(1)`  
-ブラケットで囲まれた`make_pls`はセマンティックアクションです。ない場合、即ち`[]`だと「セマンティックアクション無し」の文法定義になります。  
-そして次の文法定義に現れる`E(0) pls E(1)`は「終端記号`pls`を挟んだ左側の`E`を1番目の引数にと右側の`E`を2番目の引数に取る」という事を意味します。  
-`[make_sub] E(0) mns E(1)`と`[make_mlt] E(0) ast E(1)`についても、引き算と乗算を定義している他は同等となっています。  
-`[make_exp] l_paren E(0) r_paren`では、丸括弧に囲まれた式を表現しています。  
-`[make_ums] <unary_minus> mns E(0)`の`<unary_minus>`は、「終端記号定義部」において最も優先順位の高い終端記号を用いた優先順位の強制的な変更です。右結合の単項演算子を表現しています。
-最後に`[make_id]  id(0)`は、単に型付きの終端記号`id`の値を`make_id`に渡しているだけです。
+- terminal-symbol  
+アルファベットもしくはアンダースコアから始まり、0文字以上のアルファベットもしくはアンダースコア、数字が続く文字列。  
+終端記号。
+
+- &lt; terminal-symbol-type &gt;  
+終端記号の型。構文定義部で引数を取る終端記号は必ず型がなければならない。
