@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <boost/range.hpp>
+#include <boost/range/iterator_range.hpp>
 
 namespace kp19pp{
     typedef std::vector<char> scanner_string_type;

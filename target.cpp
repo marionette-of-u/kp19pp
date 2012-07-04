@@ -87,7 +87,9 @@ namespace kp19pp{
             }
             make_parsing_table_options_type options;
             options.avoid_conflict = true;
-            options.put_log = true;
+            options.put_time = commandline_options.time();
+            options.put_alltime = commandline_options.alltime();
+            options.put_log = commandline_options.log();
             bool result = base_type::make_parsing_table(
                 expression_start_prime,
                 (std::numeric_limits<term_type>::max)() - 1,
@@ -118,15 +120,10 @@ namespace kp19pp{
                 break;
 
             case commandline_options_type::language_csharp:
-                break;
-
             case commandline_options_type::language_d:
-                break;
-
             case commandline_options_type::language_java:
-                break;
-
             case commandline_options_type::language_javascript:
+                std::cerr << "–¢ŽÀ‘•‚Ìo—ÍŒ`Ž®‚Å‚·.\n";
                 break;
             }
             return true;
