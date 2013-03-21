@@ -87,9 +87,7 @@ namespace kp19pp{
             }
             make_parsing_table_options_type options;
             options.avoid_conflict = true;
-            options.put_time = commandline_options.time();
-            options.put_alltime = commandline_options.alltime();
-            options.put_log = commandline_options.log();
+            options.put_log = true;
             bool result = base_type::make_parsing_table(
                 expression_start_prime,
                 (std::numeric_limits<term_type>::max)() - 1,
@@ -114,17 +112,15 @@ namespace kp19pp{
                 std::cerr << "ファイルの生成に失敗しました.\n";
                 return false;
             }
-            switch(commandline_options.language()){
-            case commandline_options_type::language_cpp:
-                generate_cpp(ofile, commandline_options, scanner);
-                break;
-
-            case commandline_options_type::language_csharp:
-            case commandline_options_type::language_d:
-            case commandline_options_type::language_java:
-            case commandline_options_type::language_javascript:
-                std::cerr << "未実装の出力形式です.\n";
-                break;
+            std::map<
+                commandline_options_type::language_enum,
+                void(target_type::*)(std::ostream&, const commandline_options_type&, const scanner::scanner_type&)
+            > function_map;
+            function_map[commandline_options_type::language_cpp] = &target_type::generate_cpp;
+            function_map[commandline_options_type::language_vimscript] = &target_type::generate_vimscript;
+            auto find_result = function_map.find(commandline_options.language());
+            if(find_result != function_map.end()){
+                (this->*(find_result->second))(ofile, commandline_options, scanner);
             }
             return true;
         }

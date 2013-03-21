@@ -4,6 +4,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <locale>
+#include <cstdlib>
 #include <boost/range/iterator_range.hpp>
 
 namespace kp19pp{
@@ -37,6 +39,15 @@ namespace kp19pp{
 
     std::size_t lexical_cast(std::string value);
     std::string lexical_cast(std::size_t);
+
+    inline std::string str_to_upper(const char *str){
+        std::locale l;
+        std::string ret;
+        for(std::size_t i = 0; str[i]; ++i){
+            ret += std::toupper(str[i], l);
+        }
+        return ret;
+    }
 }
 
 #endif // KP19PP_COMMON_HPP_

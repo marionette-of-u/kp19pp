@@ -1,26 +1,14 @@
 #include <iostream>
 #include <algorithm>
-#include <locale>
-#include <cstdlib>
+#include "common.hpp"
 #include "commandline_options.hpp"
 
 namespace kp19pp{
     commandline_options_type::commandline_options_type() :
-        ifile_path_(), ofile_path_(), language_(language_cpp), indent_(indent_space4), time_(false), alltime_(false), log_(false)
+        ifile_path_(), ofile_path_(), language_(language_cpp), indent_(indent_space4)
     {}
 
-    namespace{
-        std::string str_to_upper(const char *str){
-            std::locale l;
-            std::string ret;
-            for(std::size_t i = 0; str[i]; ++i){
-                ret += std::toupper(str[i], l);
-            }
-            return ret;
-        }
-    }
-
-    bool commandline_options_type::get(int argc, char **argv){
+    bool commandline_options_type::get(int argc, const char **argv){
         int state = 0;
         for(int index = 1; index < argc; ++index){
             if(argv[index][0] == '-'){
@@ -54,6 +42,13 @@ namespace kp19pp{
                     language_ = language_javascript;
                     continue;
                 }
+                if(
+                    str == "-VIM" ||
+                    str == "-VIMSCRIPT"
+                ){
+                    language_ = language_vimscript;
+                    continue;
+                }
                 if(str == "-INDENT=SPACE"){
                     indent_ = indent_space;
                     continue;
@@ -70,18 +65,6 @@ namespace kp19pp{
                     indent_ = indent_tab;
                     continue;
                 }
-                if(str == "-TIME"){
-                    time_ = true;
-                    continue;
-                }
-                if(str == "-ALLTIME"){
-                    alltime_ = true;
-                    continue;
-                }
-                if(str == "-LOG"){
-                    log_ = true;
-                    continue;
-                }
                 std::cerr << "unknown options" << argv[index] << "\n";
                 return false;
             }
@@ -94,7 +77,7 @@ namespace kp19pp{
             }
         }
         if(state < 2){
-            std::cout << "kp19pp usage: kp19pp [ -c++ | -cs | -d | -java | -javascript | -indent=space | -indent=tab | -time | -alltime | -log ] ifile_name ofile_name\n";
+            std::cout << "kp19pp usage: kp19pp [ -c++ | -cs | -d | -java | -javascript | -vimscript | -indent=space | -indent=tab ] ifile_name ofile_name\n";
             return false;
         }
         return true;
@@ -133,17 +116,5 @@ namespace kp19pp{
 
     commandline_options_type::indent_enum commandline_options_type::indent() const{
         return indent_;
-    }
-
-    bool commandline_options_type::time() const{
-        return time_;
-    }
-
-    bool commandline_options_type::alltime() const{
-        return alltime_;
-    }
-
-    bool commandline_options_type::log() const{
-        return log_;
     }
 }

@@ -5,14 +5,14 @@
 #include "scanner.hpp"
 #include "target.hpp"
 
-int main(int argc, char **argv){
+int main(int argc, char *argv[]){
     //int argc = 5;
-    //char *argv[] = {
-    //    "dummy.exe",
-    //    "-c++",
+    //const char *argv[] = {
+    //    "dummy",
+    //    "-vim",
     //    "-indent=space",
     //    "ifile.txt",
-    //    "ofile.hpp"
+    //    "ofile.vim"
     //};
 
     try{

@@ -9,29 +9,27 @@
 
 namespace kp19pp{
     namespace target{
-        namespace{
-            typedef scanner::scanner_type::nonterminal_symbol_data_type::rhs_type::argindex_to_symbol_map_type argindex_to_symbol_map_type;
+        typedef scanner::scanner_type::nonterminal_symbol_data_type::rhs_type::argindex_to_symbol_map_type argindex_to_symbol_map_type;
 
-            std::vector<string_iter_pair_type> make_signature(
-                const string_iter_pair_type &semantic_action,
-                const string_iter_pair_type &return_type,
-                const argindex_to_symbol_map_type &argindex_to_symbol_map
-            ){
-                std::vector<string_iter_pair_type> signature;
+        std::vector<string_iter_pair_type> make_signature(
+            const string_iter_pair_type &semantic_action,
+            const string_iter_pair_type &return_type,
+            const argindex_to_symbol_map_type &argindex_to_symbol_map
+        ){
+            std::vector<string_iter_pair_type> signature;
 
-                // function name
-                signature.push_back(semantic_action);
+            // function name
+            signature.push_back(semantic_action);
 
-                // return value
-                signature.push_back(return_type);
+            // return value
+            signature.push_back(return_type);
 
-                //arguments
-                for(std::size_t i = 0, i_length = argindex_to_symbol_map.size(); i < i_length; ++i){
-                    signature.push_back(argindex_to_symbol_map.find(i)->second.type_cache->value);
-                }
-
-                return std::move(signature);
+            //arguments
+            for(std::size_t i = 0, i_length = argindex_to_symbol_map.size(); i < i_length; ++i){
+                signature.push_back(argindex_to_symbol_map.find(i)->second.type_cache->value);
             }
+
+            return signature;
         }
 
         void target_type::generate_cpp(
@@ -63,8 +61,6 @@ namespace kp19pp{
             // namespace header
             os << "namespace " << scanner.namespace_grammar << "{\n\n";
 
-            std::string namespace_token = scanner.namespace_token.size() > 0 ? scanner.namespace_token.to_string() + std::string("_") : std::string("token_");
-
             if(!scanner.external_token){
                 // token enumeration
                 if(scanner.namespace_token.empty()){
@@ -74,10 +70,10 @@ namespace kp19pp{
                 }
                 for(std::size_t i = 0; i < scanner.number_to_token_map.size(); ++i){
                     auto find_ret(scanner.number_to_token_map.find(i)->second);
-                    os << indent_1 << namespace_token << find_ret.value << ",";
+                    os << indent_1 << scanner.namespace_token << "_" << find_ret.value << ",";
                     os << "\n";
                 }
-                os << indent_1 << namespace_token << "0\n"
+                os << indent_1 << scanner.namespace_token << "_" << "0\n"
                    << "};\n\n";
             }
 
@@ -169,7 +165,7 @@ namespace kp19pp{
 
             // public interface
             os << "public:\n"
-               << indent_1 << "typedef " << (scanner.external_token ? "Token" : scanner.namespace_token.size() > 0 ? scanner.namespace_token.to_string().c_str() : "token") << " token_type;\n"
+               << indent_1 << (scanner.external_token ? "typedef Token token_type;\n" : "typedef token token_type;\n")
                << indent_1 << "typedef Value value_type;\n"
                << "\n"
                << "public:\n"
@@ -298,7 +294,6 @@ namespace kp19pp{
                         auto &action(action_iter->second);
                         if(action.action_kind != action_reduce){ continue; }
                         auto &semantic(action.item->rhs->semantic);
-                        if(semantic.action->empty()){ continue; }
 
                         // make signature
                         std::vector<string_iter_pair_type> signature;
@@ -485,10 +480,10 @@ namespace kp19pp{
                     {
                         auto find_ret = scanner.term_to_token_map.find(action.first);
                         if(find_ret == scanner.term_to_token_map.end()){
-                            case_tag = namespace_token + "0";
+                            case_tag = scanner.namespace_token.to_string() + "_0";
                         }else{
                             auto &token_name(find_ret->second.value);
-                            case_tag = namespace_token + token_name.to_string();
+                            case_tag = scanner.namespace_token.to_string() + "_" + token_name.to_string();
                         }
                     }
 
@@ -521,7 +516,7 @@ namespace kp19pp{
                                 );
                             }
 
-                            if(!item.rhs->semantic.action->empty()){
+                            if(item.rhs->semantic.action){
                                 auto semantic_aciton = *item.rhs->semantic.action;
                                     
                                 std::vector<string_iter_pair_type> signature = make_signature(
@@ -536,7 +531,13 @@ namespace kp19pp{
                                     std::size_t i = 0, i_length = argindex_to_symbol_map.size();
                                     i < i_length;
                                     ++i
-                                ){ arg_indices.push_back(argindex_to_symbol_map.find(i)->second.src_index); }
+                                ){
+                                    arg_indices.push_back(
+                                        lexical_cast(
+                                            argindex_to_symbol_map.find(i)->second.number.value.to_string()
+                                        )
+                                    );
+                                }
 
                                 reduce_action_cache_key_type key =
                                     boost::make_tuple(
@@ -599,8 +600,6 @@ namespace kp19pp{
                     std::size_t nonterminal_index = key.get<1>();
                     std::size_t base = key.get<2>();
                     auto &arg_indices(key.get<3>());
-
-                    if(signature[0].empty()){ continue; }
 
                     for(std::size_t i = 0, i_length = cases.size(); i < i_length; ++i){
                         os << indent_1 << indent_1 << "case " << cases[i] << ":\n";

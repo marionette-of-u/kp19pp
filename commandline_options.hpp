@@ -10,7 +10,8 @@ namespace kp19pp{
             language_csharp,
             language_d,
             language_java,
-            language_javascript
+            language_javascript,
+            language_vimscript
         };
 
         enum indent_enum{
@@ -21,23 +22,19 @@ namespace kp19pp{
         };
 
         commandline_options_type();
-        bool get(int argc, char **argv);
+        bool get(int argc, const char **argv);
         const std::string &ifile_path() const;
         std::string ifile_name() const;
         const std::string &ofile_path() const;
         std::string ofile_name() const;
         language_enum language() const;
         indent_enum indent() const;
-        bool time() const;
-        bool alltime() const;
-        bool log() const;
 
     private:
         std::string file_name(const std::string &str) const;
         std::string ifile_path_, ofile_path_;
         language_enum language_;
         indent_enum indent_;
-        bool time_, alltime_, log_;
     };
 }
 

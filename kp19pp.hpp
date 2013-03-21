@@ -1090,7 +1090,11 @@ namespace kp19pp{
                 ) = slr_goto;
                 // !!
                 // gcc 4.7.0 ‚¾‚Æ main_items ‚ªƒLƒƒƒvƒ`ƒƒ‚³‚ê‚È‚¢
-                auto ref_main_items(main_items);
+                bool (*ref_main_items)(
+                    item_set_type&,
+                    const item_set_type&,
+                    const term_type
+                ) = main_items;
                 auto fn = [&](const term_set_type &symbol_set){
                     for(auto term_iter = symbol_set.begin(), term_end = symbol_set.end(); term_iter != term_end; ++term_iter){
                         auto &x(*term_iter);
