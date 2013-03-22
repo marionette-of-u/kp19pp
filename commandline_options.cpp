@@ -5,7 +5,7 @@
 
 namespace kp19pp{
     commandline_options_type::commandline_options_type() :
-        ifile_path_(), ofile_path_(), language_(language_cpp), indent_(indent_space4)
+        ifile_path_(), ofile_path_(), language_(language_cpp), indent_(indent_space4), time_(false), alltime_(false), log_(false)
     {}
 
     bool commandline_options_type::get(int argc, const char **argv){
@@ -65,6 +65,18 @@ namespace kp19pp{
                     indent_ = indent_tab;
                     continue;
                 }
+                if(str == "-TIME"){ 
+                    time_ = true; 
+                    continue; 
+                } 
+                if(str == "-ALLTIME"){ 
+                    alltime_ = true; 
+                    continue; 
+                } 
+                if(str == "-LOG"){ 
+                    log_ = true; 
+                    continue; 
+                }
                 std::cerr << "unknown options" << argv[index] << "\n";
                 return false;
             }
@@ -116,5 +128,17 @@ namespace kp19pp{
 
     commandline_options_type::indent_enum commandline_options_type::indent() const{
         return indent_;
+    }
+
+    bool commandline_options_type::time() const{
+        return time_;
+    }
+
+    bool commandline_options_type::alltime() const{
+        return alltime_;
+    }
+
+    bool commandline_options_type::log() const{
+        return log_;
     }
 }

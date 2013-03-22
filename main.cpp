@@ -6,13 +6,16 @@
 #include "target.hpp"
 
 int main(int argc, char *argv[]){
-    //int argc = 5;
+    //int argc = 8;
     //const char *argv[] = {
     //    "dummy",
-    //    "-vim",
+    //    "-c++",
     //    "-indent=space",
+    //    "-time",
+    //    "-alltime",
+    //    "-log",
     //    "ifile.txt",
-    //    "ofile.vim"
+    //    "ofile.hpp"
     //};
 
     try{

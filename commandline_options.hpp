@@ -29,12 +29,16 @@ namespace kp19pp{
         std::string ofile_name() const;
         language_enum language() const;
         indent_enum indent() const;
+        bool time() const;
+        bool alltime() const;
+        bool log() const;
 
     private:
         std::string file_name(const std::string &str) const;
         std::string ifile_path_, ofile_path_;
         language_enum language_;
         indent_enum indent_;
+        bool time_, alltime_, log_;
     };
 }
 
