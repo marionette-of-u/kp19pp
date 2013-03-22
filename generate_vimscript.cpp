@@ -259,23 +259,12 @@ namespace kp19pp{
                             "call_" + lexical_cast(index) + "_" + semantic.action->to_string();
                         
                         // generate
-                        os << s_function("parser." + function_name, "nonterminal_index, base");
-                        for(std::size_t i = 0, i_length = semantic.argindex_to_symbol_map->size(); i < i_length; i++){
-                            os << ", arg_index" << i;
-                        }
-
-                        // automatic argument conversion
-                        for(std::size_t i = 0, i_length = semantic.argindex_to_symbol_map->size(); i < i_length; ++i){
-                            auto &arg_data(semantic.argindex_to_symbol_map->find(i)->second);
-                            os << indent_1
-                               << " arg"
-                               << i
-                               << "\n"
-                               << "call self.sa_.downcast(a:arg"
-                               << i
-                               << ", self.get_arg(a:base, a:arg_index"
-                               << i
-                               << "))\n";
+                        {
+                            std::stringstream ss;
+                            for(std::size_t i = 0, i_length = semantic.argindex_to_symbol_map->size(); i < i_length; i++){
+                                ss << ", arg_idx_" << i;
+                            }
+                            os << s_function("parser." + function_name, "nonterminal_index, base" + ss.str());
                         }
 
                         // semantic action
@@ -283,7 +272,7 @@ namespace kp19pp{
                         bool first = true;
                         for(std::size_t i = 0, i_length = semantic.argindex_to_symbol_map->size(); i < i_length; ++i){
                             if(first){ first = false; }else{ os << ", "; }
-                            os << "arg" << i;
+                            os << "self.get_arg(a:base, a:arg_idx_" << i << ")";
                         }
                         os << ")\n";
 
@@ -457,13 +446,7 @@ namespace kp19pp{
                                     std::size_t i = 0, i_length = argindex_to_symbol_map.size();
                                     i < i_length;
                                     ++i
-                                ){
-                                    arg_indices.push_back(
-                                        lexical_cast(
-                                            argindex_to_symbol_map.find(i)->second.number.value.to_string()
-                                        )
-                                    );
-                                }
+                                ){ arg_indices.push_back(argindex_to_symbol_map.find(i)->second.src_index); }
 
                                 reduce_action_cache_key_type key =
                                     boost::make_tuple(

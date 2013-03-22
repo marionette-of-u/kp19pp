@@ -6,17 +6,17 @@
 #include "target.hpp"
 
 int main(int argc, char *argv[]){
-    //int argc = 8;
     //const char *argv[] = {
     //    "dummy",
-    //    "-c++",
+    //    "-vim",
     //    "-indent=space",
     //    "-time",
     //    "-alltime",
     //    "-log",
     //    "ifile.txt",
-    //    "ofile.hpp"
+    //    "ofile.vim"
     //};
+    //int argc = sizeof(argv) / sizeof(*argv);
 
     try{
         kp19pp::commandline_options_type commandline_options;
