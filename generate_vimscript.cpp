@@ -475,7 +475,7 @@ namespace kp19pp{
 
                         os << indent_1 << indent_1 << "let self.accepted_ = 1\n"
                            << indent_1 << indent_1
-                           << "let self.accepted_value_ = self.get_arg(1, 0)\n" // implicit root
+                           << "let self.accepted_value = self.get_arg(1, 0)\n" // implicit root
                            << indent_1 << indent_1 << "return 0\n";
                         elseif_flag = true;
                         break;
