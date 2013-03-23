@@ -22,7 +22,7 @@ namespace kp19pp{
         };
 
         commandline_options_type();
-        bool get(int argc, const char **argv);
+        bool get(int argc, char *argv[]);
         const std::string &ifile_path() const;
         std::string ifile_name() const;
         const std::string &ofile_path() const;

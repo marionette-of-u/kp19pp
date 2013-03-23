@@ -8,7 +8,7 @@ namespace kp19pp{
         ifile_path_(), ofile_path_(), language_(language_cpp), indent_(indent_space4), time_(false), alltime_(false), log_(false)
     {}
 
-    bool commandline_options_type::get(int argc, const char **argv){
+    bool commandline_options_type::get(int argc, char *argv[]){
         int state = 0;
         for(int index = 1; index < argc; ++index){
             if(argv[index][0] == '-'){
