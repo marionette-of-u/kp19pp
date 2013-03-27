@@ -784,13 +784,15 @@ namespace kp19pp{
                                     if(tag_p == epsilon){
                                         p = rhs_priority(act.item->rhs);
                                     }else{
-                                        p = std::make_pair(0, nonassoc);
+                                        const auto &tag_terminal_data(terminal_data_map.find(tag_p)->second);
+                                        p = std::make_pair(tag_terminal_data.priority, tag_terminal_data.linkdir);
                                     }
                                     const auto &tag_q(other_act.item->rhs->tag());
                                     if(tag_q == epsilon){
                                         q = rhs_priority(other_act.item->rhs);
                                     }else{
-                                        q = std::make_pair(0, nonassoc);
+                                        const auto &tag_terminal_data(terminal_data_map.find(tag_q)->second);
+                                        q = std::make_pair(tag_terminal_data.priority, tag_terminal_data.linkdir);
                                     }
                                     if(p.first > q.first){
                                         actions_i.erase(ret.first);
