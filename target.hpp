@@ -1,4 +1,4 @@
-#ifndef KP19PP_TARGET_HPP_
+﻿#ifndef KP19PP_TARGET_HPP_
 #define KP19PP_TARGET_HPP_
 
 #include <fstream>

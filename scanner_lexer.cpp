@@ -1,6 +1,6 @@
-#if    defined(_MSC_VER) && (_MSC_VER >= 1400)
+ï»¿#if    defined(_MSC_VER) && (_MSC_VER >= 1400)
     // !!
-    // boost::spirit::qig—p‚Éo‚Ä‚­‚éŠÖ”‚É‘Î‚·‚éconst/volatileCüq–³Œø‚ÌŒx‚ğ—}§‚·‚é.
+    // boost::spirit::qiä½¿ç”¨æ™‚ã«å‡ºã¦ãã‚‹é–¢æ•°ã«å¯¾ã™ã‚‹const/volatileä¿®é£¾å­ç„¡åŠ¹ã®è­¦å‘Šã‚’æŠ‘åˆ¶ã™ã‚‹.
 #    pragma warning(disable:4180)
 #endif
 
@@ -44,6 +44,19 @@ namespace kp19pp{
             bool
         ){ lexer::char_count() += range.size(); }
 
+        void f_first_line(
+            const boost::iterator_range<scanner_string_type::const_iterator> &range,
+            const boost::spirit::qi::unused_type&,
+            bool
+        ){
+            if(lexer::line_count() == 0){
+                lexer::char_count() = 0;
+                ++lexer::line_count();
+            }else{
+                throw(exception("lexical error.", lexer::char_count(), lexer::line_count()));
+            }
+        }
+
         void f_end_of_line(
             const boost::iterator_range<scanner_string_type::const_iterator> &range,
             const boost::spirit::qi::unused_type&,
@@ -67,6 +80,7 @@ namespace kp19pp{
                     iter, end,
                     raw[+(char_(' ') | char_('\t'))][f_whitespace] |
                     raw[char_('\n')][f_end_of_line] |
+                    raw[char_('#') >> char_('!') >> *(char_ - char_('\n')) >> char_('\n')][f_first_line] |
                     raw[char_('/') >> char_('/') >> *(char_ - char_('\n')) >> char_('\n')][f_end_of_line] |
                     raw[(char_('a', 'z') | char_('A', 'Z') | char_('_')) >> *(char_('a', 'z') | char_('A', 'Z') | char_('0', '9') | char_('_'))][f_identifier] |
                     raw[(char_('1', '9') >> *char_('0', '9')) | char_('0')][f_value] |
@@ -86,7 +100,7 @@ namespace kp19pp{
                     raw[char_(')')][f_r_round_pare] |
                     raw[char_('|')][f_symbol_or] |
                     raw[char_(':')][f_symbol_colon]
-                )){ throw(exception("š‹å‰ğÍƒGƒ‰[.", char_count(), line_count())); }
+                )){ throw(exception("lexical error.", char_count(), line_count())); }
             }
         }
 

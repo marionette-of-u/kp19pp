@@ -1,4 +1,4 @@
-#include "kp19pp.hpp"
+ï»¿#include "kp19pp.hpp"
 #include <string>
 
 struct eos_functor{
@@ -18,8 +18,8 @@ void example(){
     lalr1_type lalr1;
     std::string dummy_term = "#";
 
-    // •¶–@‚ğ’è‹`‚·‚é --------
-    // Šg‘å•¶–@
+    // æ–‡æ³•ã‚’å®šç¾©ã™ã‚‹ --------
+    // æ‹¡å¤§æ–‡æ³•
     // S' -> E
     lalr1_type::expression_type expression_start_prime;
     {
@@ -78,7 +78,7 @@ void example(){
         lalr1.add_expression(e);
     }
 
-    // I’[‹L†‚Ìƒf[ƒ^‚ğûW‚·‚é --------
+    // çµ‚ç«¯è¨˜å·ã®ãƒ‡ãƒ¼ã‚¿ã‚’åé›†ã™ã‚‹ --------
     {
         // !! dummy
         lalr1_type::symbol_data_type symbol_data;
@@ -100,7 +100,7 @@ void example(){
         lalr1.add_terminal_symbol(eps_functor()(), symbol_data);
     }
 
-    // ƒGƒ“ƒWƒ“‚ÌƒIƒvƒVƒ‡ƒ“ --------
+    // ã‚¨ãƒ³ã‚¸ãƒ³ã®ã‚ªãƒ—ã‚·ãƒ§ãƒ³ --------
     lalr1_type::make_parsing_table_options_type options;
     options.avoid_conflict = true;
     options.disambiguating = true;

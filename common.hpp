@@ -1,4 +1,4 @@
-#ifndef KP19PP_COMMON_HPP_
+﻿#ifndef KP19PP_COMMON_HPP_
 #define KP19PP_COMMON_HPP_
 
 #include <iostream>

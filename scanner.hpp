@@ -1,4 +1,4 @@
-#ifndef KP19PP_SCANNER_HPP_
+﻿#ifndef KP19PP_SCANNER_HPP_
 #define KP19PP_SCANNER_HPP_
 
 #include <string>

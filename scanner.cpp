@@ -1,4 +1,4 @@
-#include <iostream>
+ï»¿#include <iostream>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -198,7 +198,7 @@ namespace kp19pp{
 
         void scanner_type::check_undefined_nonterminal_symbol(){
             if(undefined_nonterminal_symbol_set.empty()){ return; }
-            exception_seq e("’è‹`‚³‚ê‚Ä‚¢‚È‚¢‹L†‚Å‚·.");
+            exception_seq e("undefined symbol.");
             for(
                 auto iter = undefined_nonterminal_symbol_set.begin(), end = undefined_nonterminal_symbol_set.end();
                 iter != end;
@@ -238,7 +238,7 @@ namespace kp19pp{
                 first_nonterminal_symbol.value.term,
                 &nonterminal_symbol_map[first_nonterminal_symbol]
             );
-            exception_seq e("Žg‚í‚ê‚È‚¢”ñI’[‹L†‚ðŒŸo‚µ‚Ü‚µ‚½.");
+            exception_seq e("unused terminal symbol.");
             for(auto iter = nonterminal_symbol_map.begin(), end = nonterminal_symbol_map.end(); iter != end; ++iter){
                 auto term(iter->first.value.term);
                 if(scanned_nonterminal_symbol_set.find(term) == scanned_nonterminal_symbol_set.end()){
@@ -391,7 +391,7 @@ namespace kp19pp{
                         exception(
                             "'" +
                             symbol.value.value.to_string() +
-                            "' ƒg[ƒNƒ“‚Ì‘½d’è‹`‚Å‚·.",
+                            "' multiple defined token.",
                             symbol.value.char_num,
                             symbol.value.line_num
                         )
@@ -562,7 +562,7 @@ namespace kp19pp{
                             exception(
                                 "'" +
                                 linkdir.value.to_string() +
-                                "' I’[‹L†‚ÌŒ‹‡•ûŒü‚ª 'left', 'right', 'nonassoc' ‚Ì‚¢‚¸‚ê‚Å‚à‚ ‚è‚Ü‚¹‚ñ.",
+                                "' link direction is not 'left' or 'right' or 'nonassoc'.",
                                 linkdir.char_num,
                                 linkdir.line_num
                             )
@@ -641,7 +641,7 @@ namespace kp19pp{
                         exception(
                             "'" +
                             tag.value.to_string() +
-                            "' ƒ^ƒO‚ªI’[‹L†‚Å‚Í‚ ‚è‚Ü‚¹‚ñ.",
+                            "' tag is not terminal symbol.",
                             tag.char_num,
                             tag.line_num
                         )
@@ -687,7 +687,7 @@ namespace kp19pp{
                             exception(
                                 "'" +
                                 arg.value.to_string() +
-                                "' ˆø”‚ªd•¡‚µ‚Ä‚¢‚Ü‚·.",
+                                "' duplicative argument.",
                                 arg.char_num,
                                 arg.line_num
                             )
@@ -702,7 +702,7 @@ namespace kp19pp{
                                 exception(
                                     "'" +
                                     identifier.value.to_string() +
-                                    "' ˆø”‚Æ‚È‚é‹L†‚ÉŒ^‚ª‚ ‚è‚Ü‚¹‚ñ.",
+                                    "' argument symbol not has typoe.",
                                     identifier.char_num,
                                     identifier.line_num
                                 )
@@ -743,7 +743,7 @@ namespace kp19pp{
                 if(data.current_rhs.empty() && !data.current_rhs.semantic_action.value.empty()){
                     throw(
                         exception(
-                            "epsilon¶¬‹K‘¥‚ÉƒZƒ}ƒ“ƒeƒBƒbƒNƒAƒNƒVƒ‡ƒ“‚ª‘¶Ý‚µ‚Ü‚·.",
+                            "epsilon generate rule has semantic action.",
                             data.current_rhs.semantic_action.char_num,
                             data.current_rhs.semantic_action.line_num
                         )
@@ -755,7 +755,7 @@ namespace kp19pp{
                 if(!ret.second){
                     throw(
                         exception(
-                            "‹K‘¥‚Ì‘½d’è‹`‚ðŒŸo‚µ‚Ü‚µ‚½.",
+                            "duplicative rule.",
                             data.current_rhs.front().first.value.char_num,
                             data.current_rhs.front().first.value.line_num
                         )
@@ -781,7 +781,7 @@ namespace kp19pp{
                         }
                         throw(
                             exception(
-                                "‹K‘¥“à‚Å‚Ìˆø”‚ª˜A‘±‚µ‚Ä‚¢‚Ü‚¹‚ñ.",
+                                "argument is not sequential.",
                                 iter->second.number.char_num,
                                 iter->second.number.line_num
                             )
@@ -827,7 +827,7 @@ namespace kp19pp{
                     if(data.terminal_symbol_map.find(terminal_symbol) != data.terminal_symbol_map.end()){
                         throw(
                             exception(
-                                "'" + identifier.value.to_string() + "' I’[‹L†‚Æ”ñI’[‹L†‚ªÕ“Ë‚µ‚Ü‚µ‚½.",
+                                "'" + identifier.value.to_string() + "' conflict terminal symbol and non-terminal symbol.",
                                 identifier.char_num,
                                 identifier.line_num
                             )
@@ -837,7 +837,7 @@ namespace kp19pp{
                     if(!ret.second){
                         throw(
                             exception(
-                                "'" + identifier.value.to_string() + "' ”ñI’[‹L†‚ªÄ’è‹`‚³‚ê‚Ü‚µ‚½.",
+                                "'" + identifier.value.to_string() + "'again a terminal symbol declared.",
                                 identifier.char_num,
                                 identifier.line_num
                             )
@@ -883,10 +883,10 @@ namespace kp19pp{
                     }else if(str == "token_desc"){
                         data.token_order = scanner_type::order_descending;
                     }else{
-                        throw(exception("ƒwƒbƒ_[‚ª 'token_asc', 'token_desc' ‚Ì‚¢‚¸‚ê‚Å‚à‚ ‚è‚Ü‚¹‚ñ.", header.char_num, header.line_num));
+                        throw(exception("header is not 'token_asc' or 'token_desc'.", header.char_num, header.line_num));
                     }
                 }else if(data.analysis_phase == scanner_type::phase_grammar && str != "grammar"){
-                    throw(exception("ƒwƒbƒ_[‚ª 'grammar' ‚Å‚Í‚ ‚è‚Ü‚¹‚ñ.", header.char_num, header.line_num));
+                    throw(exception("header is not 'grammar'.", header.char_num, header.line_num));
                 }
                 return header;
             }
@@ -896,7 +896,7 @@ namespace kp19pp{
                 if(identifier.value.to_string() != "extern"){
                     throw(
                         exception(
-                            "tokenƒwƒbƒ_[CüŽq‚ª 'extern' ‚Å‚Í‚ ‚è‚Ü‚¹‚ñ.",
+                            "token header is not 'extern'.",
                             identifier.char_num,
                             identifier.line_num
                         )
@@ -1328,7 +1328,7 @@ namespace kp19pp{
             };
 
             make_parsing_table_options_type options;
-            // options.put_log = true; // ƒfƒoƒbƒO—p
+            // options.put_log = true; // ãƒ‡ãƒãƒƒã‚°ç”¨
 
             bool result = make_parsing_table(
                 start_prime,
@@ -1338,13 +1338,13 @@ namespace kp19pp{
                 term_to_str
             );
 
-            if(!result){ // !! ƒu[ƒg—p‚Ì•¶–@‚ªŠÔˆá‚Á‚Ä‚¢‚é
+            if(!result){ // !! ãƒ–ãƒ¼ãƒˆç”¨ã®æ–‡æ³•ãŒé–“é•ã£ã¦ã„ã‚‹
                 return;
             }
 
             {
                 /*
-                // ƒƒO‚ðŽc‚·
+                // ãƒ­ã‚°ã‚’æ®‹ã™
                 std::ofstream parsing_log("parsing_log.txt");
                 auto put_fn = [&](const item_type &item) -> void{
                     parsing_log << "reduce " << term_to_str(item.lhs) << " :";
@@ -1367,10 +1367,10 @@ namespace kp19pp{
                 };
                 */
 
-                //ƒƒO‚ðŽc‚³‚È‚¢
+                //ãƒ­ã‚°ã‚’æ®‹ã•ãªã„
                 auto put_fn = [](const item_type&) -> void{  };
                 auto error_fn = [](const token_seq_type::const_iterator &iter) -> void{
-                    throw(exception("•¶–@ƒGƒ‰[.", iter->char_num, iter->line_num));
+                    throw(exception("syntax error.", iter->char_num, iter->line_num));
                 };
 
                 parse(put_fn, error_fn);

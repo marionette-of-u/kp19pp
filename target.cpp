@@ -1,4 +1,4 @@
-#include "target.hpp"
+ï»¿#include "target.hpp"
 
 namespace kp19pp{
     namespace target{
@@ -87,6 +87,7 @@ namespace kp19pp{
             }
             make_parsing_table_options_type options;
             options.avoid_conflict = true;
+            options.disambiguating = true;
             options.put_time = commandline_options.time();
             options.put_alltime = commandline_options.alltime();
             options.put_log = commandline_options.log();
@@ -111,7 +112,7 @@ namespace kp19pp{
             }
             std::ofstream ofile(commandline_options.ofile_path());
             if(!ofile){
-                std::cerr << "ƒtƒ@ƒCƒ‹‚Ì¶¬‚ÉŽ¸”s‚µ‚Ü‚µ‚½.\n";
+                std::cerr << "ãƒ•ã‚¡ã‚¤ãƒ«ã®ç”Ÿæˆã«å¤±æ•—ã—ã¾ã—ãŸ.\n";
                 return false;
             }
             std::map<

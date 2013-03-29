@@ -1,4 +1,4 @@
-#include <iostream>
+ï»¿#include <iostream>
 #include <cstdlib>
 #include "exception.hpp"
 #include "commandline_options.hpp"
@@ -6,7 +6,7 @@
 #include "target.hpp"
 
 int main(int argc, char *argv[]){
-    //const char *argv[] = {
+    //char *argv[] = {
     //    "dummy",
     //    "-vim",
     //    "-indent=space",
@@ -25,7 +25,7 @@ int main(int argc, char *argv[]){
         }
         std::ifstream ifile(commandline_options.ifile_path());
         if(!ifile){
-            std::cerr << "ƒtƒ@ƒCƒ‹‚Ì“Ç‚Ýž‚Ý‚ÉŽ¸”s‚µ‚Ü‚µ‚½.\n";
+            std::cerr << "ãƒ•ã‚¡ã‚¤ãƒ«ã®èª­ã¿è¾¼ã¿ã«å¤±æ•—ã—ã¾ã—ãŸ.\n";
             return -1;
         }
         kp19pp::scanner::scanner_type scanner;

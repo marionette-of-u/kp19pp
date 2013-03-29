@@ -1,4 +1,4 @@
-#include <list>
+﻿#include <list>
 #include <sstream>
 #include <cstdio>
 #include <cctype>
@@ -149,7 +149,7 @@ namespace kp19pp{
             // post
             os << s_function("parser.post", "token, value");
             os << indent_1 << "call self.reset_tmp_stack()\n";
-            os << indent_1 << "while self[self.stack_top().state](a:token, a:value) == 1\n";
+            os << indent_1 << "while self[self.stack_top().state](a:token, a:value)\n";
             os << indent_1 << "endwhile\n";
             os << indent_1 << "if self.error_ == 0\n";
             os << indent_1 << indent_1 << "call self.commit_tmp_stack()\n";

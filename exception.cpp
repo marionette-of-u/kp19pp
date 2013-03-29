@@ -1,4 +1,4 @@
-#include "exception.hpp"
+﻿#include "exception.hpp"
 
 namespace kp19pp{
     exception::exception(const std::string &str, std::size_t char_num_, std::size_t line_num_) :
