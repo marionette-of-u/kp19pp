@@ -324,8 +324,12 @@ namespace kp19pp{
                         stub_index[signature] = index;
                         stub_count[*semantic.action] = index + 1;
 
+                        std::string semantic_action_name = semantic.action->to_string();
+                        if(semantic_action_name.empty()){
+                            semantic_action_name = "0";
+                        }
                         std::string function_name =
-                            "call_" + lexical_cast(index) + "_" + semantic.action->to_string();
+                            "call_" + lexical_cast(index) + "_" + semantic_action_name;
                         
                         // generate
                         os << indent_1 << "bool " << function_name << "(int nonterminal_index, int base";
@@ -351,17 +355,21 @@ namespace kp19pp{
                         }
 
                         // semantic action
-                        os << indent_1 << indent_1 << *semantic.type << " r = sa_." << *semantic.action << "(";
-                        bool first = true;
-                        for(std::size_t i = 0, i_length = semantic.argindex_to_symbol_map->size(); i < i_length; ++i){
-                            if(first){ first = false; }else{ os << ", "; }
-                            os << "arg" << i;
+                        if(semantic.action->size() != 0){
+                            os << indent_1 << indent_1 << *semantic.type << " r = sa_." << *semantic.action << "(";
+                            bool first = true;
+                            for(std::size_t i = 0, i_length = semantic.argindex_to_symbol_map->size(); i < i_length; ++i){
+                                if(first){ first = false; }else{ os << ", "; }
+                                os << "arg" << i;
+                            }
+                            os << ");\n";
                         }
-                        os << ");\n";
 
                         // automatic return value conversion
-                        os << indent_1 << indent_1
-                           << "value_type v; sa_.upcast(v, r);\n";
+                        os << indent_1 << indent_1 << "value_type v = value_type();\n";
+                        if(semantic.action->size() != 0){
+                            os << indent_1 << indent_1 << "sa_.upcast(v, r);\n";
+                        }
                         os << indent_1 << indent_1 << "pop_stack(base);\n";
                         os << indent_1 << indent_1
                            << "return (this->*(stack_top()->gotof))(nonterminal_index, v);\n";
@@ -600,9 +608,11 @@ namespace kp19pp{
                     }
 
                     std::size_t index = stub_index[signature];
-                    std::string function_name =
-                        "call_" + lexical_cast(index) + "_" + signature[0].to_string();
-                        
+                    std::string function_name = "call_" + lexical_cast(index) + "_";
+                    std::string call_target = signature[0].to_string();
+                    if(call_target.empty()){ call_target = "0"; }
+                    function_name += call_target;
+
                     os << indent_1 << indent_1 << indent_1 << "return "
                         << function_name << "(" << nonterminal_index << ", " << base;
                     for(
