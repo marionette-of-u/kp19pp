@@ -4,7 +4,7 @@ CC          = g++
 CFLAGS      = -std=c++11 -c
 RFLAGS      = -O3
 DFLAGS      = -g -O0
-INCLUDES = -I/usr/include -I/usr/include/c++/4.7.2 -I/usr/include/c++/4.7.2/backword -I/usr/include/c++/4.7.2/x86_64-unknown-linux-gnu -I/usr/lib/gcc/x86_64-unknown-linux-gnu/4.7.2/include
+INCLUDES    = -I /usr/include -I C:/cppinclude/boost_1_54_0
 
 .PHONY: all
 .PHONY: debug

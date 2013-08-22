@@ -7,10 +7,7 @@ namespace kp19pp{
     public:
         enum language_enum{
             language_cpp,
-            language_csharp,
-            language_d,
-            language_java,
-            language_javascript,
+            language_haskell,
             language_vimscript
         };
 

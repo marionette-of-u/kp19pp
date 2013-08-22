@@ -562,7 +562,7 @@ namespace kp19pp{
                             exception(
                                 "'" +
                                 linkdir.value.to_string() +
-                                "' link direction is not 'left' or 'right' or 'nonassoc'.",
+                                "' link direction is not ('left'|'right'|'nonassoc').",
                                 linkdir.char_num,
                                 linkdir.line_num
                             )
@@ -883,7 +883,7 @@ namespace kp19pp{
                     }else if(str == "token_desc"){
                         data.token_order = scanner_type::order_descending;
                     }else{
-                        throw(exception("header is not 'token_asc' or 'token_desc'.", header.char_num, header.line_num));
+                        throw(exception("header is not ('token_asc'|'token_desc').", header.char_num, header.line_num));
                     }
                 }else if(data.analysis_phase == scanner_type::phase_grammar && str != "grammar"){
                     throw(exception("header is not 'grammar'.", header.char_num, header.line_num));

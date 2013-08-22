@@ -1,13 +1,9 @@
-﻿#if    defined(_MSC_VER) && (_MSC_VER >= 1400)
-    // !!
-    // boost::spirit::qi使用時に出てくる関数に対するconst/volatile修飾子無効の警告を抑制する.
-#    pragma warning(disable:4180)
-#endif
-
+﻿#include <utility>
+#include <iterator>
+#include <cstring>
+#include <cctype>
+#include <ctype.h>
 #include <boost/range.hpp>
-#include <boost/spirit/include/qi.hpp>
-#include <boost/spirit/include/qi_parse.hpp>
-#include <boost/spirit/include/phoenix_operator.hpp>
 #include "scanner.hpp"
 #include "exception.hpp"
 
@@ -26,82 +22,877 @@ namespace kp19pp{
             token_seq() = token_seq_;
         }
 
-#define DECL(name) \
-    void f_ ## name( \
-        const boost::iterator_range<scanner_string_type::const_iterator> &range, \
-        const boost::spirit::qi::unused_type&, \
-        bool \
-    ){ \
-        lexer::token_seq()->push_back(scanner_type::token_type(string_iter_pair_type(range.begin(), range.end()), terminal_symbol::name, lexer::char_count(), lexer::line_count())); \
-        lexer::char_count() += range.size(); \
-    }
-        KP19PP_SCANNER_DECL_TERMINAL_SYMBOLS();
-#undef DECL
+        namespace impl{
+            class lexer{
+            public:
+                template<class InputIter>
+                static std::pair<bool, InputIter> reg_whitespace(InputIter first, InputIter last){
+                    InputIter iter = first;
+                    bool match = true;
+                    if(iter == last){ match = false; }else{ 
+                        InputIter iter_prime = iter;
+                        do{
+                            if(iter == last){ match = false; }else{
+                                InputIter iter_prime = iter;
+                                do{
+                                    if(iter != last && *iter == ' '){
+                                        ++iter;
+                                        match = true;
+                                    }else{ match = false; }
+                                    if(!match){ iter = iter_prime; break; }
+                                }while(false);
+                            }
+                            if(match){ break; }else{ iter = iter_prime; }
+                            if(iter != last && *iter == '\t'){
+                                ++iter;
+                                match = true;
+                            }else{ match = false; }
+                            if(!match){ iter = iter_prime; }
+                        }while(false);
+                    }
+                    if(match){
+                        scanner::lexer::char_count() += last - iter;
+                    }
+                    return std::make_pair(match, iter);
+                }
 
-        void f_whitespace(
-            const boost::iterator_range<scanner_string_type::const_iterator> &range,
-            const boost::spirit::qi::unused_type&,
-            bool
-        ){ lexer::char_count() += range.size(); }
+                template<class InputIter>
+                static std::pair<bool, InputIter> reg_end_of_line(InputIter first, InputIter last){
+                    InputIter iter = first;
+                    bool match = true;
+                    if(iter == last){ match = false; }else{ 
+                        InputIter iter_prime = iter;
+                        do{
+                            if(iter != last && *iter == '\n'){
+                                ++iter;
+                                match = true;
+                            }else{ match = false; }
+                            if(match){ break; }else{ iter = iter_prime; }
+                            if(iter == last){ match = false; }else{
+                                InputIter iter_prime = iter;
+                                do{
+                                    if(iter == last){ match = false; }else{
+                                        InputIter iter_prime = iter;
+                                        do{
+                                            if(iter != last && *iter == '/'){
+                                                ++iter;
+                                                match = true;
+                                            }else{ match = false; }
+                                            if(!match){ iter = iter_prime; break; }
+                                            if(iter != last && *iter == '/'){
+                                                ++iter;
+                                                match = true;
+                                            }else{ match = false; }
+                                            if(!match){ iter = iter_prime; break; }
+                                        }while(false);
+                                    }
+                                    if(!match){ iter = iter_prime; break; }
+                                    {
+                                        InputIter iter_prime = iter;
+                                        while(iter != last){
+                                            if(iter == last){ match = false; }else{
+                                                char c = *iter;
+                                                if(
+                                                    (c != '\n')
+                                                ){
+                                                    ++iter;
+                                                    match = true;
+                                                }else{ match = false; }
+                                            }
+                                            if(match){ iter_prime = iter; }else{
+                                                iter = iter_prime;
+                                                match = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if(!match){ iter = iter_prime; break; }
+                                    if(iter != last && *iter == '\n'){
+                                        ++iter;
+                                        match = true;
+                                    }else{ match = false; }
+                                    if(!match){ iter = iter_prime; break; }
+                                }while(false);
+                            }
+                            if(!match){ iter = iter_prime; }
+                        }while(false);
+                    }
+                    if(match){
+                        scanner::lexer::char_count() = 0;
+                        ++scanner::lexer::line_count();
+                    }
+                    return std::make_pair(match, iter);
+                }
 
-        void f_first_line(
-            const boost::iterator_range<scanner_string_type::const_iterator> &range,
-            const boost::spirit::qi::unused_type&,
-            bool
-        ){
-            if(lexer::line_count() == 0){
-                lexer::char_count() = 0;
-                ++lexer::line_count();
-            }else{
-                throw(exception("lexical error.", lexer::char_count(), lexer::line_count()));
-            }
-        }
+                template<class InputIter>
+                static std::pair<bool, InputIter> reg_first_line(InputIter first, InputIter last){
+                    InputIter iter = first;
+                    bool match = true;
+                    if(iter == last){ match = false; }else{
+                        InputIter iter_prime = iter;
+                        do{
+                            if(iter == last){ match = false; }else{
+                                InputIter iter_prime = iter;
+                                do{
+                                    if(iter != last && *iter == '#'){
+                                        ++iter;
+                                        match = true;
+                                    }else{ match = false; }
+                                    if(!match){ iter = iter_prime; break; }
+                                    if(iter != last && *iter == '!'){
+                                        ++iter;
+                                        match = true;
+                                    }else{ match = false; }
+                                    if(!match){ iter = iter_prime; break; }
+                                }while(false);
+                            }
+                            if(!match){ iter = iter_prime; break; }
+                            {
+                                InputIter iter_prime = iter;
+                                while(iter != last){
+                                    if(iter == last){ match = false; }else{
+                                        char c = *iter;
+                                        if(
+                                            (c != '\n')
+                                        ){
+                                            ++iter;
+                                            match = true;
+                                        }else{ match = false; }
+                                    }
+                                    if(match){ iter_prime = iter; }else{
+                                        iter = iter_prime;
+                                        match = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if(!match){ iter = iter_prime; break; }
+                            if(iter != last && *iter == '\n'){
+                                ++iter;
+                                match = true;
+                            }else{ match = false; }
+                            if(!match){ iter = iter_prime; break; }
+                        }while(false);
+                    }
+                    if(match){
+                        if(scanner::lexer::line_count() == 0){
+                            scanner::lexer::char_count() = 0;
+                            ++scanner::lexer::line_count();
+                        }else{
+                            throw(exception("lexical error.", lex->char_count(), lex->line_count()));
+                        }
+                    }
+                    return std::make_pair(match, iter);
+                }
 
-        void f_end_of_line(
-            const boost::iterator_range<scanner_string_type::const_iterator> &range,
-            const boost::spirit::qi::unused_type&,
-            bool
-        ){
-            lexer::char_count() = 0;
-            ++lexer::line_count();
-        }
+                template<class InputIter>
+                static std::pair<bool, InputIter> reg_identifier(InputIter first, InputIter last){
+                    InputIter iter = first;
+                    bool match = true;
+                    if(iter == last){ match = false; }else{
+                        InputIter iter_prime = iter;
+                        do{
+                            if(iter == last){ match = false; }else{
+                                char c = *iter;
+                                if(
+                                    ((c >= 'a') && (c <= 'z')) ||
+                                    ((c >= 'A') && (c <= 'Z')) ||
+                                    (c == '_')
+                                ){
+                                    ++iter;
+                                    match = true;
+                                }else{ match = false; }
+                            }
+                            if(!match){ iter = iter_prime; break; }
+                            {
+                                InputIter iter_prime = iter;
+                                while(iter != last){
+                                    if(iter == last){ match = false; }else{
+                                        char c = *iter;
+                                        if(
+                                            ((c >= 'a') && (c <= 'z')) ||
+                                            ((c >= 'A') && (c <= 'Z')) ||
+                                            ((c >= '0') && (c <= '9')) ||
+                                            (c == '_')
+                                        ){
+                                            ++iter;
+                                            match = true;
+                                        }else{ match = false; }
+                                    }
+                                    if(match){ iter_prime = iter; }else{
+                                        iter = iter_prime;
+                                        match = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if(!match){ iter = iter_prime; break; }
+                        }while(false);
+                    }
+                    if(match){
+                        scanner::lexer::token_seq()->push_back(
+                            scanner_type::token_type(
+                                string_iter_pair_type(first, iter),
+                                terminal_symbol::identifier,
+                                lex->char_count(),
+                                lex->line_count()
+                            )
+                        );
+                        lex->char_count() += iter - first;
+                    }
+                    return std::make_pair(match, iter);
+                }
+
+                template<class InputIter>
+                static std::pair<bool, InputIter> reg_value(InputIter first, InputIter last){
+                    InputIter iter = first;
+                    bool match = true;
+                    if(iter == last){ match = false; }else{ 
+                        InputIter iter_prime = iter;
+                        do{
+                            if(iter == last){ match = false; }else{
+                                InputIter iter_prime = iter;
+                                do{
+                                    if(iter == last){ match = false; }else{
+                                        char c = *iter;
+                                        if(
+                                            ((c >= '1') && (c <= '9'))
+                                        ){
+                                            ++iter;
+                                            match = true;
+                                        }else{ match = false; }
+                                    }
+                                    if(!match){ iter = iter_prime; break; }
+                                    {
+                                        InputIter iter_prime = iter;
+                                        while(iter != last){
+                                            if(iter == last){ match = false; }else{
+                                                char c = *iter;
+                                                if(
+                                                    ((c >= '0') && (c <= '9'))
+                                                ){
+                                                    ++iter;
+                                                    match = true;
+                                                }else{ match = false; }
+                                            }
+                                            if(match){ iter_prime = iter; }else{
+                                                iter = iter_prime;
+                                                match = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if(!match){ iter = iter_prime; break; }
+                                }while(false);
+                            }
+                            if(match){ break; }else{ iter = iter_prime; }
+                            if(iter == last){ match = false; }else{
+                                InputIter iter_prime = iter;
+                                do{
+                                    if(iter != last && *iter == '0'){
+                                        ++iter;
+                                        match = true;
+                                    }else{ match = false; }
+                                    if(!match){ iter = iter_prime; break; }
+                                }while(false);
+                            }
+                            if(!match){ iter = iter_prime; }
+                        }while(false);
+                    }
+                    if(match){
+                        scanner::lexer::token_seq()->push_back(
+                            scanner_type::token_type(
+                                string_iter_pair_type(first, iter),
+                                terminal_symbol::value,
+                                lex->char_count(),
+                                lex->line_count()
+                            )
+                        );
+                        lex->char_count() += iter - first;
+                    }
+                    return std::make_pair(match, iter);
+                }
+
+                template<class InputIter>
+                static std::pair<bool, InputIter> reg_comma(InputIter first, InputIter last){
+                    InputIter iter = first;
+                    bool match = true;
+                    if(iter == last){ match = false; }else{
+                        InputIter iter_prime = iter;
+                        do{
+                            if(iter != last && *iter == ','){
+                                ++iter;
+                                match = true;
+                            }else{ match = false; }
+                            if(!match){ iter = iter_prime; break; }
+                        }while(false);
+                    }
+                    if(match){
+                        scanner::lexer::token_seq()->push_back(
+                            scanner_type::token_type(
+                                string_iter_pair_type(first, iter),
+                                terminal_symbol::comma,
+                                lex->char_count(),
+                                lex->line_count()
+                            )
+                        );
+                        lex->char_count() += iter - first;
+                    }
+                    return std::make_pair(match, iter);
+                }
+
+                template<class InputIter>
+                static std::pair<bool, InputIter> reg_dot(InputIter first, InputIter last){
+                    InputIter iter = first;
+                    bool match = true;
+                    if(iter == last){ match = false; }else{
+                        InputIter iter_prime = iter;
+                        do{
+                            if(iter != last && *iter == '.'){
+                                ++iter;
+                                match = true;
+                            }else{ match = false; }
+                            if(!match){ iter = iter_prime; break; }
+                        }while(false);
+                    }
+                    if(match){
+                        scanner::lexer::token_seq()->push_back(
+                            scanner_type::token_type(
+                                string_iter_pair_type(first, iter),
+                                terminal_symbol::dot,
+                                lex->char_count(),
+                                lex->line_count()
+                            )
+                        );
+                        lex->char_count() += iter - first;
+                    }
+                    return std::make_pair(match, iter);
+                }
+
+                template<class InputIter>
+                static std::pair<bool, InputIter> reg_asterisk(InputIter first, InputIter last){
+                    InputIter iter = first;
+                    bool match = true;
+                    if(iter == last){ match = false; }else{
+                        InputIter iter_prime = iter;
+                        do{
+                            if(iter != last && *iter == '*'){
+                                ++iter;
+                                match = true;
+                            }else{ match = false; }
+                            if(!match){ iter = iter_prime; break; }
+                        }while(false);
+                    }
+                    if(match){
+                        scanner::lexer::token_seq()->push_back(
+                            scanner_type::token_type(
+                                string_iter_pair_type(first, iter),
+                                terminal_symbol::asterisk,
+                                lex->char_count(),
+                                lex->line_count()
+                            )
+                        );
+                        lex->char_count() += iter - first;
+                    }
+                    return std::make_pair(match, iter);
+                }
+
+                template<class InputIter>
+                static std::pair<bool, InputIter> reg_ampersand(InputIter first, InputIter last){
+                    InputIter iter = first;
+                    bool match = true;
+                    if(iter == last){ match = false; }else{
+                        InputIter iter_prime = iter;
+                        do{
+                            if(iter != last && *iter == '&'){
+                                ++iter;
+                                match = true;
+                            }else{ match = false; }
+                            if(!match){ iter = iter_prime; break; }
+                        }while(false);
+                    }
+                    if(match){
+                        scanner::lexer::token_seq()->push_back(
+                            scanner_type::token_type(
+                                string_iter_pair_type(first, iter),
+                                terminal_symbol::ampersand,
+                                lex->char_count(),
+                                lex->line_count()
+                            )
+                        );
+                        lex->char_count() += iter - first;
+                    }
+                    return std::make_pair(match, iter);
+                }
+
+                template<class InputIter>
+                static std::pair<bool, InputIter> reg_double_colon(InputIter first, InputIter last){
+                    InputIter iter = first;
+                    bool match = true;
+                    if(iter == last){ match = false; }else{
+                        InputIter iter_prime = iter;
+                        do{
+                            if(iter != last && *iter == ':'){
+                                ++iter;
+                                match = true;
+                            }else{ match = false; }
+                            if(!match){ iter = iter_prime; break; }
+                            if(iter != last && *iter == ':'){
+                                ++iter;
+                                match = true;
+                            }else{ match = false; }
+                            if(!match){ iter = iter_prime; break; }
+                        }while(false);
+                    }
+                    if(match){
+                        scanner::lexer::token_seq()->push_back(
+                            scanner_type::token_type(
+                                string_iter_pair_type(first, iter),
+                                terminal_symbol::double_colon,
+                                lex->char_count(),
+                                lex->line_count()
+                            )
+                        );
+                        lex->char_count() += iter - first;
+                    }
+                    return std::make_pair(match, iter);
+                }
+
+                template<class InputIter>
+                static std::pair<bool, InputIter> reg_semicolon(InputIter first, InputIter last){
+                    InputIter iter = first;
+                    bool match = true;
+                    if(iter == last){ match = false; }else{
+                        InputIter iter_prime = iter;
+                        do{
+                            if(iter != last && *iter == ';'){
+                                ++iter;
+                                match = true;
+                            }else{ match = false; }
+                            if(!match){ iter = iter_prime; break; }
+                        }while(false);
+                    }
+                    if(match){
+                        scanner::lexer::token_seq()->push_back(
+                            scanner_type::token_type(
+                                string_iter_pair_type(first, iter),
+                                terminal_symbol::semicolon,
+                                lex->char_count(),
+                                lex->line_count()
+                            )
+                        );
+                        lex->char_count() += iter - first;
+                    }
+                    return std::make_pair(match, iter);
+                }
+
+                template<class InputIter>
+                static std::pair<bool, InputIter> reg_l_square_bracket(InputIter first, InputIter last){
+                    InputIter iter = first;
+                    bool match = true;
+                    if(iter == last){ match = false; }else{
+                        InputIter iter_prime = iter;
+                        do{
+                            if(iter != last && *iter == '['){
+                                ++iter;
+                                match = true;
+                            }else{ match = false; }
+                            if(!match){ iter = iter_prime; break; }
+                        }while(false);
+                    }
+                    if(match){
+                        scanner::lexer::token_seq()->push_back(
+                            scanner_type::token_type(
+                                string_iter_pair_type(first, iter),
+                                terminal_symbol::l_square_bracket,
+                                lex->char_count(),
+                                lex->line_count()
+                            )
+                        );
+                        lex->char_count() += iter - first;
+                    }
+                    return std::make_pair(match, iter);
+                }
+
+                template<class InputIter>
+                static std::pair<bool, InputIter> reg_r_square_bracket(InputIter first, InputIter last){
+                    InputIter iter = first;
+                    bool match = true;
+                    if(iter == last){ match = false; }else{
+                        InputIter iter_prime = iter;
+                        do{
+                            if(iter != last && *iter == ']'){
+                                ++iter;
+                                match = true;
+                            }else{ match = false; }
+                            if(!match){ iter = iter_prime; break; }
+                        }while(false);
+                    }
+                    if(match){
+                        scanner::lexer::token_seq()->push_back(
+                            scanner_type::token_type(
+                                string_iter_pair_type(first, iter),
+                                terminal_symbol::r_square_bracket,
+                                lex->char_count(),
+                                lex->line_count()
+                            )
+                        );
+                        lex->char_count() += iter - first;
+                    }
+                    return std::make_pair(match, iter);
+                }
+
+                template<class InputIter>
+                static std::pair<bool, InputIter> reg_l_curly_bracket(InputIter first, InputIter last){
+                    InputIter iter = first;
+                    bool match = true;
+                    if(iter == last){ match = false; }else{
+                        InputIter iter_prime = iter;
+                        do{
+                            if(iter != last && *iter == '{'){
+                                ++iter;
+                                match = true;
+                            }else{ match = false; }
+                            if(!match){ iter = iter_prime; break; }
+                        }while(false);
+                    }
+                    if(match){
+                        scanner::lexer::token_seq()->push_back(
+                            scanner_type::token_type(
+                                string_iter_pair_type(first, iter),
+                                terminal_symbol::l_curly_bracket,
+                                lex->char_count(),
+                                lex->line_count()
+                            )
+                        );
+                        lex->char_count() += iter - first;
+                    }
+                    return std::make_pair(match, iter);
+                }
+
+                template<class InputIter>
+                static std::pair<bool, InputIter> reg_r_curly_bracket(InputIter first, InputIter last){
+                    InputIter iter = first;
+                    bool match = true;
+                    if(iter == last){ match = false; }else{
+                        InputIter iter_prime = iter;
+                        do{
+                            if(iter != last && *iter == '}'){
+                                ++iter;
+                                match = true;
+                            }else{ match = false; }
+                            if(!match){ iter = iter_prime; break; }
+                        }while(false);
+                    }
+                    if(match){
+                        scanner::lexer::token_seq()->push_back(
+                            scanner_type::token_type(
+                                string_iter_pair_type(first, iter),
+                                terminal_symbol::r_curly_bracket,
+                                lex->char_count(),
+                                lex->line_count()
+                            )
+                        );
+                        lex->char_count() += iter - first;
+                    }
+                    return std::make_pair(match, iter);
+                }
+
+                template<class InputIter>
+                static std::pair<bool, InputIter> reg_l_bracket(InputIter first, InputIter last){
+                    InputIter iter = first;
+                    bool match = true;
+                    if(iter == last){ match = false; }else{
+                        InputIter iter_prime = iter;
+                        do{
+                            if(iter != last && *iter == '<'){
+                                ++iter;
+                                match = true;
+                            }else{ match = false; }
+                            if(!match){ iter = iter_prime; break; }
+                        }while(false);
+                    }
+                    if(match){
+                        scanner::lexer::token_seq()->push_back(
+                            scanner_type::token_type(
+                                string_iter_pair_type(first, iter),
+                                terminal_symbol::l_bracket,
+                                lex->char_count(),
+                                lex->line_count()
+                            )
+                        );
+                        lex->char_count() += iter - first;
+                    }
+                    return std::make_pair(match, iter);
+                }
+
+                template<class InputIter>
+                static std::pair<bool, InputIter> reg_r_bracket(InputIter first, InputIter last){
+                    InputIter iter = first;
+                    bool match = true;
+                    if(iter == last){ match = false; }else{
+                        InputIter iter_prime = iter;
+                        do{
+                            if(iter != last && *iter == '>'){
+                                ++iter;
+                                match = true;
+                            }else{ match = false; }
+                            if(!match){ iter = iter_prime; break; }
+                        }while(false);
+                    }
+                    if(match){
+                        scanner::lexer::token_seq()->push_back(
+                            scanner_type::token_type(
+                                string_iter_pair_type(first, iter),
+                                terminal_symbol::r_bracket,
+                                lex->char_count(),
+                                lex->line_count()
+                            )
+                        );
+                        lex->char_count() += iter - first;
+                    }
+                    return std::make_pair(match, iter);
+                }
+
+                template<class InputIter>
+                static std::pair<bool, InputIter> reg_l_round_pare(InputIter first, InputIter last){
+                    InputIter iter = first;
+                    bool match = true;
+                    if(iter == last){ match = false; }else{
+                        InputIter iter_prime = iter;
+                        do{
+                            if(iter != last && *iter == '('){
+                                ++iter;
+                                match = true;
+                            }else{ match = false; }
+                            if(!match){ iter = iter_prime; break; }
+                        }while(false);
+                    }
+                    if(match){
+                        scanner::lexer::token_seq()->push_back(
+                            scanner_type::token_type(
+                                string_iter_pair_type(first, iter),
+                                terminal_symbol::l_round_pare,
+                                lex->char_count(),
+                                lex->line_count()
+                            )
+                        );
+                        lex->char_count() += iter - first;
+                    }
+                    return std::make_pair(match, iter);
+                }
+
+                template<class InputIter>
+                static std::pair<bool, InputIter> reg_r_round_pare(InputIter first, InputIter last){
+                    InputIter iter = first;
+                    bool match = true;
+                    if(iter == last){ match = false; }else{
+                        InputIter iter_prime = iter;
+                        do{
+                            if(iter != last && *iter == ')'){
+                                ++iter;
+                                match = true;
+                            }else{ match = false; }
+                            if(!match){ iter = iter_prime; break; }
+                        }while(false);
+                    }
+                    if(match){
+                        scanner::lexer::token_seq()->push_back(
+                            scanner_type::token_type(
+                                string_iter_pair_type(first, iter),
+                                terminal_symbol::r_round_pare,
+                                lex->char_count(),
+                                lex->line_count()
+                            )
+                        );
+                        lex->char_count() += iter - first;
+                    }
+                    return std::make_pair(match, iter);
+                }
+
+                template<class InputIter>
+                static std::pair<bool, InputIter> reg_symbol_or(InputIter first, InputIter last){
+                    InputIter iter = first;
+                    bool match = true;
+                    if(iter == last){ match = false; }else{
+                        InputIter iter_prime = iter;
+                        do{
+                            if(iter != last && *iter == '|'){
+                                ++iter;
+                                match = true;
+                            }else{ match = false; }
+                            if(!match){ iter = iter_prime; break; }
+                        }while(false);
+                    }
+                    if(match){
+                        scanner::lexer::token_seq()->push_back(
+                            scanner_type::token_type(
+                                string_iter_pair_type(first, iter),
+                                terminal_symbol::symbol_or,
+                                lex->char_count(),
+                                lex->line_count()
+                            )
+                        );
+                        lex->char_count() += iter - first;
+                    }
+                    return std::make_pair(match, iter);
+                }
+
+                template<class InputIter>
+                static std::pair<bool, InputIter> reg_symbol_colon(InputIter first, InputIter last){
+                    InputIter iter = first;
+                    bool match = true;
+                    if(iter == last){ match = false; }else{
+                        InputIter iter_prime = iter;
+                        do{
+                            if(iter != last && *iter == ':'){
+                                ++iter;
+                                match = true;
+                            }else{ match = false; }
+                            if(!match){ iter = iter_prime; break; }
+                        }while(false);
+                    }
+                    if(match){
+                        scanner::lexer::token_seq()->push_back(
+                            scanner_type::token_type(
+                                string_iter_pair_type(first, iter),
+                                terminal_symbol::symbol_colon,
+                                lex->char_count(),
+                                lex->line_count()
+                            )
+                        );
+                        lex->char_count() += iter - first;
+                    }
+                    return std::make_pair(match, iter);
+                }
+
+                template<class InputIter>
+                static void tokenize(InputIter first, InputIter last){
+                    InputIter iter = first;
+                    std::pair<bool, InputIter> result;
+                    while(iter != last){
+                        result = reg_whitespace(iter, last);
+                        if(result.first){
+                            iter = result.second;
+                            continue;
+                        }
+                        result = reg_end_of_line(iter, last);
+                        if(result.first){
+                            iter = result.second;
+                            continue;
+                        }
+                        result = reg_first_line(iter, last);
+                        if(result.first){
+                            iter = result.second;
+                            continue;
+                        }
+                        result = reg_identifier(iter, last);
+                        if(result.first){
+                            iter = result.second;
+                            continue;
+                        }
+                        result = reg_value(iter, last);
+                        if(result.first){
+                            iter = result.second;
+                            continue;
+                        }
+                        result = reg_comma(iter, last);
+                        if(result.first){
+                            iter = result.second;
+                            continue;
+                        }
+                        result = reg_dot(iter, last);
+                        if(result.first){
+                            iter = result.second;
+                            continue;
+                        }
+                        result = reg_asterisk(iter, last);
+                        if(result.first){
+                            iter = result.second;
+                            continue;
+                        }
+                        result = reg_ampersand(iter, last);
+                        if(result.first){
+                            iter = result.second;
+                            continue;
+                        }
+                        result = reg_double_colon(iter, last);
+                        if(result.first){
+                            iter = result.second;
+                            continue;
+                        }
+                        result = reg_semicolon(iter, last);
+                        if(result.first){
+                            iter = result.second;
+                            continue;
+                        }
+                        result = reg_l_square_bracket(iter, last);
+                        if(result.first){
+                            iter = result.second;
+                            continue;
+                        }
+                        result = reg_r_square_bracket(iter, last);
+                        if(result.first){
+                            iter = result.second;
+                            continue;
+                        }
+                        result = reg_l_curly_bracket(iter, last);
+                        if(result.first){
+                            iter = result.second;
+                            continue;
+                        }
+                        result = reg_r_curly_bracket(iter, last);
+                        if(result.first){
+                            iter = result.second;
+                            continue;
+                        }
+                        result = reg_l_bracket(iter, last);
+                        if(result.first){
+                            iter = result.second;
+                            continue;
+                        }
+                        result = reg_r_bracket(iter, last);
+                        if(result.first){
+                            iter = result.second;
+                            continue;
+                        }
+                        result = reg_l_round_pare(iter, last);
+                        if(result.first){
+                            iter = result.second;
+                            continue;
+                        }
+                        result = reg_r_round_pare(iter, last);
+                        if(result.first){
+                            iter = result.second;
+                            continue;
+                        }
+                        result = reg_symbol_or(iter, last);
+                        if(result.first){
+                            iter = result.second;
+                            continue;
+                        }
+                        result = reg_symbol_colon(iter, last);
+                        if(result.first){
+                            iter = result.second;
+                            continue;
+                        }
+                        break;
+                    }
+                    if(iter != last){
+                        throw(exception("lexical error.", lex->char_count(), lex->line_count()));
+                    }
+                }
+            };
+        } // namespace impl
 
         void lexer::tokenize(std::istream &in, scanner_string_type &str){
-            using namespace boost::spirit;
-            using namespace boost::spirit::qi;
             {
                 std::string str_;
                 std::getline(in, str_, '\0');
                 str.reserve(str_.size());
                 str.assign(str_.begin(), str_.end());
             }
-            for(auto iter = str.begin(), end = str.end(); iter != end; ){
-                if(!parse(
-                    iter, end,
-                    raw[+(char_(' ') | char_('\t'))][f_whitespace] |
-                    raw[char_('\n')][f_end_of_line] |
-                    raw[char_('#') >> char_('!') >> *(char_ - char_('\n')) >> char_('\n')][f_first_line] |
-                    raw[char_('/') >> char_('/') >> *(char_ - char_('\n')) >> char_('\n')][f_end_of_line] |
-                    raw[(char_('a', 'z') | char_('A', 'Z') | char_('_')) >> *(char_('a', 'z') | char_('A', 'Z') | char_('0', '9') | char_('_'))][f_identifier] |
-                    raw[(char_('1', '9') >> *char_('0', '9')) | char_('0')][f_value] |
-                    raw[char_(',')][f_comma] |
-                    raw[char_('.')][f_dot] |
-                    raw[char_('*')][f_asterisk] |
-                    raw[char_('&')][f_ampersand] |
-                    raw[char_(':') >> char_(':')][f_double_colon] |
-                    raw[char_(';')][f_semicolon] |
-                    raw[char_('[')][f_l_square_bracket] |
-                    raw[char_(']')][f_r_square_bracket] |
-                    raw[char_('{')][f_l_curly_bracket] |
-                    raw[char_('}')][f_r_curly_bracket] |
-                    raw[char_('<')][f_l_bracket] |
-                    raw[char_('>')][f_r_bracket] |
-                    raw[char_('(')][f_l_round_pare] |
-                    raw[char_(')')][f_r_round_pare] |
-                    raw[char_('|')][f_symbol_or] |
-                    raw[char_(':')][f_symbol_colon]
-                )){ throw(exception("lexical error.", char_count(), line_count())); }
-            }
+            impl::lexer::tokenize(str.begin(), str.end());
         }
 
         std::size_t &lexer::char_count(){
@@ -118,5 +909,5 @@ namespace kp19pp{
             static scanner_type::token_seq_type *ptr;
             return ptr;
         }
-    }
-}
+    } // namespace scanner
+} // namespace kp19pp

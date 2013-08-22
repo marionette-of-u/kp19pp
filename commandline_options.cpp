@@ -1,81 +1,51 @@
 ﻿#include <iostream>
 #include <algorithm>
+#include <map>
+#include <functional>
 #include "common.hpp"
 #include "commandline_options.hpp"
 
 namespace kp19pp{
+    namespace{
+        std::map<std::string, std::function<void()>> command_map;
+    }
+
     commandline_options_type::commandline_options_type() :
         ifile_path_(), ofile_path_(), language_(language_cpp), indent_(indent_space4), time_(false), alltime_(false), log_(false)
-    {}
+    {
+        command_map["-C++"] =
+            command_map["-CPP"] =
+            [&](){ language_ = language_cpp; };
+        command_map["-HS"] =
+            command_map["-HASKELL"] =
+            [&](){ language_ = language_haskell; };
+        command_map["-VIM"] =
+            command_map["-VIMSCRIPT"] =
+            [&](){ language_ = language_vimscript; };
+        command_map["-INDENT=SPACE"] =
+            [&](){ indent_ = indent_space; };
+        command_map["-INDENT=SPACE4"] =
+            [&](){ indent_ = indent_space4; };
+        command_map["-INDENT=SPACE8"] =
+            [&](){ indent_ = indent_space8; };
+        command_map["-TAB"] =
+            [&](){ indent_ = indent_tab; };
+        command_map["-TIME"] =
+            [&](){ time_ = true; };
+        command_map["-ALLTIME"] =
+            [&](){ alltime_ = true; };
+        command_map["-LOG"] =
+            [&](){ log_ = true; };
+    }
 
     bool commandline_options_type::get(int argc, char *argv[]){
         int state = 0;
         for(int index = 1; index < argc; ++index){
             if(argv[index][0] == '-'){
-                std::string str = str_to_upper(argv[index]);
-                if(
-                    str == "-C++" ||
-                    str == "-CPP"
-                ){
-                    language_ = language_cpp;
+                auto iter = command_map.find(str_to_upper(argv[index]));
+                if(iter != command_map.end()){
+                    (iter->second)();
                     continue;
-                }
-                if(
-                    str == "-C#" ||
-                    str == "-CS" ||
-                    str == "-CSHARP"
-                ){
-                    language_ = language_csharp;
-                    continue;
-                }
-                if(str == "-D"){
-                    language_ = language_d;
-                    continue;
-                }
-                if(str == "-JAVA"){
-                    language_ = language_java;
-                }
-                if(
-                    str == "-JS" ||
-                    str == "-JAVASCRIPT"
-                ){
-                    language_ = language_javascript;
-                    continue;
-                }
-                if(
-                    str == "-VIM" ||
-                    str == "-VIMSCRIPT"
-                ){
-                    language_ = language_vimscript;
-                    continue;
-                }
-                if(str == "-INDENT=SPACE"){
-                    indent_ = indent_space;
-                    continue;
-                }
-                if(str == "-INDENT=SPACE4"){
-                    indent_ = indent_space4;
-                    continue;
-                }
-                if(str == "-INDENT=SPACE8"){
-                    indent_ = indent_space8;
-                    continue;
-                }
-                if(str == "-INDENT=TAB"){
-                    indent_ = indent_tab;
-                    continue;
-                }
-                if(str == "-TIME"){ 
-                    time_ = true; 
-                    continue; 
-                } 
-                if(str == "-ALLTIME"){ 
-                    alltime_ = true; 
-                    continue; 
-                } 
-                if(str == "-LOG"){ 
-                    log_ = true; 
-                    continue; 
                 }
                 std::cerr << "unknown options" << argv[index] << "\n";
                 return false;
@@ -89,7 +59,7 @@ namespace kp19pp{
             }
         }
         if(state < 2){
-            std::cout << "kp19pp usage: kp19pp [ -c++ | -cs | -d | -java | -javascript | -vimscript | -indent=space | -indent=tab ] ifile_name ofile_name\n";
+            std::cout << "kp19pp usage: kp19pp [ -c++ | -vim | -indent=space | -indent=tab ] ifile_name ofile_name\n";
             return false;
         }
         return true;
