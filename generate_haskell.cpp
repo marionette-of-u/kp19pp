@@ -33,6 +33,9 @@ namespace kp19pp{
         ){
             indent_type indent_1(commandline_options.indent(), 1);
 
+            // root semantic type 'Type'
+            const std::string type = scanner.nonterminal_symbol_map.find(scanner::semantic_action::make_symbol(scanner.first_nonterminal_symbol.value, scanner.first_nonterminal_symbol.value.term))->second.type.value.to_string();
+
             // data type 'Token'
             const std::string data_type_token = !scanner.namespace_token.empty() ? scanner.namespace_token.to_string() : "Token";
 
@@ -62,7 +65,7 @@ namespace kp19pp{
             os << "import SemanticData\n\n";
 
             // [type Value = ...]
-            os << "type Value = " << scanner.nonterminal_symbol_map.find(scanner::semantic_action::make_symbol(scanner.first_nonterminal_symbol.value, scanner.first_nonterminal_symbol.value.term))->second.type.value << "\n";
+            os << "type Value = " << type << "\n";
 
             // [data 'Token' = ...]
             std::size_t case_tag_norm = 3;
@@ -152,6 +155,9 @@ namespace kp19pp{
                 << "resultError  p = parsingError p\n"
                 << "\n";
 
+            // c module
+            std::ostringstream ms;
+
             std::map<std::vector<string_iter_pair_type>, std::size_t> stub_index;
             {
                 std::map<string_iter_pair_type, std::size_t> stub_count;
@@ -197,24 +203,26 @@ namespace kp19pp{
                         }
                         
                         std::string function_name = "call" + lexical_cast(index) + semantic_action_name;
-                        os << function_name << " p i base";
+                        os << function_name << " p i b";
                         for(std::size_t i = 0, i_length = semantic.argindex_to_symbol_map->size(); i < i_length; i++){
                             os << " i" << i;
                         }
-                        if(semantic.action->size() != 0){
+                        if(!semantic.action->empty()){
                             os  << " =\n"
-                                << indent_1 << "let p' = popStack p base\n"
+                                << indent_1 << "let p' = popStack p b\n"
                                 << indent_1 << "in (gotof (stackTop p')) p' i (" << *semantic.action;
+
+                            ms  << ", " << *semantic.action;
 
                             for(std::size_t i = 0, i_length = semantic.argindex_to_symbol_map->size(); i < i_length; ++i){
                                 auto &arg_data(semantic.argindex_to_symbol_map->find(i)->second);
-                                os  << " (getStackArg p base i" << i << ")";
+                                os  << " (getStackArg p b i" << i << ")";
                             }
 
                             os  << ")\n"
                                 << "\n";
                         }else{
-                            os  << " = (gotof (stackTop p)) p i " << (scanner.default_semantic_action.empty() ? std::string("0") : scanner.default_semantic_action.to_string()) << "\n";
+                            os  << " = (gotof (stackTop p)) p i " << default_value << "\n";
                         }
                     }
                 }
@@ -411,9 +419,12 @@ namespace kp19pp{
                         os  << indent_1 << indent_1 << cases[i] << std::string(case_tag_norm - cases[i].size(), ' ') << " -> ";
 
                         std::size_t index = stub_index[signature];
-                        std::string function_name = "call" + lexical_cast(index) + "";
+                        std::string function_name = "call" + lexical_cast(index);
                         std::string call_target = signature[0].to_string();
-                        if(call_target.empty()){ call_target = "0"; }
+                        if(call_target.empty()){
+                            call_target = "0";
+                        }
+
                         function_name += call_target;
 
                         os  << function_name << " p " << nonterminal_index << " " << base;
@@ -431,6 +442,13 @@ namespace kp19pp{
                 os  << indent_1 << indent_1 << "_" << std::string(case_tag_norm - 1, ' ') << " -> (ParsingData (accepted p) True (acceptedValue p) (parsingStack p), False)\n"
                     << "\n";
             }
+
+            // [-- module SemanticData ('Type', 'Init', ...) where]
+            os  << "-- module SemanticData (" << type;
+            if(!scanner.default_semantic_action.empty()){
+                os  << ", " << scanner.default_semantic_action;
+            }
+            os  << ms.str() << ") where\n";
         }
     }
 }

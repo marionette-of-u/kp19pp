@@ -11,7 +11,7 @@
 <grammar> Parser{
     [defaultValue]
     E<MyType>
-        : [makePls]  E(0) Pls E(1)
+        : [makeAdd]  E(0) Pls E(1)
         | [makeSub]  E(0) Mns E(1)
         | [makeMlt]  E(0) Ast E(1)
         | [makeDiv]  E(0) Sla E(1)
