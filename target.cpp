@@ -120,7 +120,7 @@ namespace kp19pp{
                 void(target_type::*)(std::ostream&, const commandline_options_type&, const scanner::scanner_type&)
             > function_map;
             function_map[commandline_options_type::language_cpp]       = &target_type::generate_cpp;
-            // function_map[commandline_options_type::language_haskell]   = &target_type::generate_haskell;
+            function_map[commandline_options_type::language_haskell]   = &target_type::generate_haskell;
             function_map[commandline_options_type::language_vimscript] = &target_type::generate_vimscript;
             auto find_result = function_map.find(commandline_options.language());
             if(find_result != function_map.end()){

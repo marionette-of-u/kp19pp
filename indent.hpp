@@ -7,7 +7,7 @@
 namespace kp19pp{
     struct indent_type{
         indent_type(commandline_options_type::indent_enum indent_kind_, int n_);
-        const commandline_options_type::indent_enum indent_kind;
+        const char *ptr;
         const int n;
     };
 

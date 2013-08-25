@@ -4,6 +4,13 @@
 #include <vector>
 #include <unordered_map>
 #include <cstdlib>
+#include <boost/preprocessor/cat.hpp>
+#include <boost/preprocessor/stringize.hpp>
+#include <boost/preprocessor/seq/size.hpp>
+#include <boost/preprocessor/seq/elem.hpp>
+#include <boost/preprocessor/arithmetic/inc.hpp>
+#include <boost/preprocessor/arithmetic/mul.hpp>
+#include <boost/preprocessor/arithmetic/div.hpp>
 #include "scanner.hpp"
 #include "exception.hpp"
 
@@ -800,7 +807,7 @@ namespace kp19pp{
 
             token_type make_lhs(const semantic_type::value_type &value, scanner_type &data){
                 auto &identifier(value[0]);
-                auto &type(value.back());
+                auto &type(value[1]);
                 bool decisied_nonterminal_symbol_term = false;
                 term_type nonterminal_symbol_term = epsilon_functor()();
                 if(!data.get_scanned_first_nonterminal_symbol()){
@@ -916,6 +923,11 @@ namespace kp19pp{
                 return eat(value, data);
             }
 
+            token_type make_default_semantic_action(const semantic_type::value_type &value, scanner_type &data){
+                data.default_semantic_action = value[1].value;
+                return eat(value, data);
+            }
+
             token_type make_token_namespace(const semantic_type::value_type &value, scanner_type &data){
                 auto &namespace_token(value[0]);
                 data.namespace_token = namespace_token.value;
@@ -976,6 +988,7 @@ namespace kp19pp{
             DECL(Exp);
             DECL(ExpStatements);
             DECL(ExpStatementsRest);
+            DECL(DefaultSemanticAction_opt);
             DECL(TokenHeader);
             DECL(TokenHeaderRest_opt);
             DECL(GrammarHeader);
@@ -1204,10 +1217,16 @@ namespace kp19pp{
                 GrammarHeader,
                 ((l_bracket)(identifier)(r_bracket))                                (make_header)
             );
+
+            DECL_SEQS_EPS(
+                DefaultSemanticAction_opt,
+                ((l_square_bracket)(identifier)(r_square_bracket))                 (make_default_semantic_action)
+            )
             
             DECL_SEQS(
                 GrammarBody,
-                ((l_curly_bracket)(ExpStatements.lhs)(r_curly_bracket))             (make_grammar_body)
+                ((l_curly_bracket)(DefaultSemanticAction_opt.lhs)(ExpStatements.lhs)(r_curly_bracket))
+                                                                                    (make_grammar_body)
             );
 
             DECL_SEQS_EPS(
@@ -1328,6 +1347,8 @@ namespace kp19pp{
             };
 
             make_parsing_table_options_type options;
+            options.avoid_conflict = true;
+            options.disambiguating = true;
             // options.put_log = true; // デバッグ用
 
             bool result = make_parsing_table(

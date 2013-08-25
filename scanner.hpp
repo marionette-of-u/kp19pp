@@ -4,13 +4,6 @@
 #include <string>
 #include <vector>
 #include <utility>
-#include <boost/preprocessor/cat.hpp>
-#include <boost/preprocessor/stringize.hpp>
-#include <boost/preprocessor/seq/size.hpp>
-#include <boost/preprocessor/seq/elem.hpp>
-#include <boost/preprocessor/arithmetic/inc.hpp>
-#include <boost/preprocessor/arithmetic/mul.hpp>
-#include <boost/preprocessor/arithmetic/div.hpp>
 #include "kp19pp.hpp"
 #include "common.hpp"
 
@@ -193,6 +186,7 @@ namespace kp19pp{
             bool parse(const PutFn &put_fn, const ErrorFn &error_fn);
 
         public:
+            value_type                              default_semantic_action;
             token_seq_type                          token_seq;
             string_iter_pair_type                   namespace_token,
                                                     namespace_grammar;

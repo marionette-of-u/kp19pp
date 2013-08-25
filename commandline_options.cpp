@@ -24,6 +24,8 @@ namespace kp19pp{
             [&](){ language_ = language_vimscript; };
         command_map["-INDENT=SPACE"] =
             [&](){ indent_ = indent_space; };
+        command_map["-INDENT=SPACE2"] =
+            [&](){ indent_ = indent_space2; };
         command_map["-INDENT=SPACE4"] =
             [&](){ indent_ = indent_space4; };
         command_map["-INDENT=SPACE8"] =
@@ -59,7 +61,7 @@ namespace kp19pp{
             }
         }
         if(state < 2){
-            std::cout << "kp19pp usage: kp19pp [ -c++ | -vim | -indent=space | -indent=tab ] ifile_name ofile_name\n";
+            std::cout << "kp19pp usage: kp19pp [ -c++ | -vim | -haskell | -indent=space | -indent=tab ] ifile_name ofile_name\n";
             return false;
         }
         return true;

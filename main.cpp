@@ -8,13 +8,11 @@
 int main(int argc, char *argv[]){
     //char *argv[] = {
     //    "dummy",
-    //    "-c++",
-    //    "-indent=space",
+    //    "-hs",
+    //    "-indent=space2",
     //    "-time",
-    //    "-alltime",
-    //    "-log",
-    //    "ifile.txt",
-    //    "ofile.hpp"
+    //    "sample.txt",
+    //    "Parser.hs"
     //};
     //int argc = sizeof(argv) / sizeof(*argv);
 

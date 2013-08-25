@@ -366,7 +366,11 @@ namespace kp19pp{
                         }
 
                         // automatic return value conversion
-                        os << indent_1 << indent_1 << "value_type v = value_type();\n";
+                        if(scanner.default_semantic_action.empty()){
+                            os << indent_1 << indent_1 << "value_type v = value_type();\n";
+                        }else{
+                            os << indent_1 << indent_1 << "value_type v = sa_." << scanner.default_semantic_action << "();\n";
+                        }
                         if(semantic.action->size() != 0){
                             os << indent_1 << indent_1 << "sa_.upcast(v, r);\n";
                         }

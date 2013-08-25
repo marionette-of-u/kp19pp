@@ -14,6 +14,7 @@ LALR(1) パーサジェネレータ.
 
     kp19pp [ options ] ifile ofile
 C++のコード生成をする場合は`-c++`,   
+Haskellのコード生成をする場合は`-haskell`,   
 Vim scriptのコード生成をする場合は`-vimscript`,   
 ログを出力する場合は`-log`,   
 処理時間を出力する場合は`-time`を`[ options ]`に追加. 

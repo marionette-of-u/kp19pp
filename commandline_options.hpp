@@ -13,6 +13,7 @@ namespace kp19pp{
 
         enum indent_enum{
             indent_space,
+            indent_space2,
             indent_space4,
             indent_space8,
             indent_tab

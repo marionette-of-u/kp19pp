@@ -60,6 +60,12 @@ namespace kp19pp{
                 const scanner::scanner_type &scanner
             );
 
+            void generate_haskell(
+                std::ostream &ostream,
+                const commandline_options_type &commandline_options,
+                const scanner::scanner_type &scanner
+            );
+
             void generate_vimscript(
                 std::ostream &ostream,
                 const commandline_options_type &commandline_options,
