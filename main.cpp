@@ -9,7 +9,7 @@ int main(int argc, char *argv[]){
     //char *argv[] = {
     //    "dummy",
     //    "-hs",
-    //    "-indent=space2",
+    //    "-indent=space4",
     //    "-time",
     //    "sample.txt",
     //    "Parser.hs"

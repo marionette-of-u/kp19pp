@@ -11,6 +11,7 @@
 #include <boost/preprocessor/arithmetic/inc.hpp>
 #include <boost/preprocessor/arithmetic/mul.hpp>
 #include <boost/preprocessor/arithmetic/div.hpp>
+#include "scanner_lexer.hpp"
 #include "scanner.hpp"
 #include "exception.hpp"
 
@@ -1327,8 +1328,30 @@ namespace kp19pp{
 
         void scanner_type::scan(std::istream &in){
             define_grammar(*this);
-            lexer lex(token_seq);
-            lex.tokenize(in, string);
+            {
+                std::string str_;
+                std::getline(in, str_, '\0');
+                string.reserve(str_.size());
+                string.assign(str_.begin(), str_.end());
+            }
+            scanner::iterator<scanner_string_type::iterator>
+                begin = string.begin(),
+                end = string.end();
+            impl::lexer::tokenize(
+                begin, end,
+                [&](
+                    scanner_type::term_type t,
+                    scanner::iterator<scanner_string_type::iterator> a,
+                    scanner::iterator<scanner_string_type::iterator> b
+                ){
+                    token_seq.push_back(
+                        token_type(
+                            string_iter_pair_type(a.place, b.place),
+                            t, b.char_count, b.line_count
+                        )
+                    );
+                }
+            );
             token_seq.push_back(
                 token_type(
                     string_iter_pair_type(string.end(), string.end()),
