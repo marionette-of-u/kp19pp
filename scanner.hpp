@@ -6,6 +6,7 @@
 #include <utility>
 #include "kp19pp.hpp"
 #include "common.hpp"
+#include "scanner_lexer_token.hpp"
 
 namespace kp19pp{
     namespace scanner{
@@ -231,31 +232,14 @@ namespace kp19pp{
     DECL(r_round_pare); \
     DECL(symbol_or); \
     DECL(symbol_colon); \
+    DECL(equal); \
     DECL(str)
-
-        //class lexer{
-        //public:
-        //    lexer(scanner_type::token_seq_type &token_seq_);
-        //    void reset(scanner_type::token_seq_type *token_seq_);
-
-        //public:
-        //    void tokenize(std::istream &in, scanner_string_type &str);
-        //    static std::size_t &char_count();
-        //    static std::size_t &line_count();
-        //    static scanner_type::token_seq_type *&token_seq();
-        //};
-
-        //extern lexer *lex;
 
         namespace terminal_symbol{
 #define DECL(name) \
     extern scanner_type::term_type name;
             KP19PP_SCANNER_DECL_TERMINAL_SYMBOLS();
 #undef DECL
-        }
-
-        namespace impl{
-            class lexer;
         }
     }
 }

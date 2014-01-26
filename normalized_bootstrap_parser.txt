@@ -16,203 +16,205 @@
     semicolon<token_type>,
     symbol_colon<token_type>,
     symbol_or<token_type>,
-    value<token_type>;
+    value<token_type>,
+    equal<token_type>,
+    str<token_type>;
 }
 
 <grammar> scanner{
     Start<token_type>
-        : [invoke_eat] TokenHeader(0) TokenNamespace(1) TokenBody(2) GrammarHeader(3) GrammarNamespace(4) GrammarBody(5)
+        : [eat] TokenHeader(0) TokenNamespace(1) TokenBody(2) GrammarHeader(3) GrammarNamespace(4) GrammarBody(5)
         ;
 
     IdentifierSeq<token_type>
-        : [invoke_identifier_seq_a] identifier(0) SymbolType_opt(1)
-        | [invoke_identifier_seq_b] IdentifierSeq(0) comma(1) identifier(2) SymbolType_opt(3)
+        : [identifier_seq_a] identifier(0) SymbolType_opt(1)
+        | [identifier_seq_b] IdentifierSeq(0) comma(1) identifier(2) SymbolType_opt(3)
         ;
 
     NonDelimIdentifierSeq<token_type>
-        : [invoke_make_non_delim_identifier_seq_a] identifier(0) ReferenceSpecifier_opt(1)
-        | [invoke_make_non_delim_identifier_seq_b] NonDelimIdentifierSeq(0) identifier(1) ReferenceSpecifier_opt(2)
-        | [invoke_make_non_delim_identifier_seq_c] ReferenceSpecifier(0)
+        : [make_non_delim_identifier_seq_a] identifier(0) ReferenceSpecifier_opt(1)
+        | [make_non_delim_identifier_seq_b] NonDelimIdentifierSeq(0) identifier(1) ReferenceSpecifier_opt(2)
+        | [make_non_delim_identifier_seq_c] ReferenceSpecifier(0)
         ;
 
     Type<token_type>
-        : [invoke_make_type_a] DoubleColon_opt(0) NonDelimIdentifierSeq(1) Template_opt(2) NestIdentifier_opt(3)
-        | [invoke_make_type_b] Type(0) NonDelimIdentifierSeq(1)
+        : [make_type_a] DoubleColon_opt(0) NonDelimIdentifierSeq(1) Template_opt(2) NestIdentifier_opt(3)
+        | [make_type_b] Type(0) NonDelimIdentifierSeq(1)
         ;
 
     ReferenceSpecifier<token_type>
-        : [invoke_make_reference_specifier] asterisk(0)
-        | [invoke_make_reference_specifier] ampersand(0)
+        : [make_reference_specifier] asterisk(0)
+        | [make_reference_specifier] ampersand(0)
         ;
 
     ReferenceSpecifier_opt<token_type>
-        : [invoke_make_reference_specifier_opt] ReferenceSpecifier(0)
+        : [make_reference_specifier_opt] ReferenceSpecifier(0)
         | []
         ;
 
     DoubleColon_opt<token_type>
-        : [invoke_make_double_colon_opt] double_colon(0)
+        : [make_double_colon_opt] double_colon(0)
         | []
         ;
 
     NestIdentifier_opt<token_type>
-        : [invoke_make_nest_identifier_opt] NestIdentifier(0)
+        : [make_nest_identifier_opt] NestIdentifier(0)
         | []
         ;
 
     NestIdentifier<token_type>
-        : [invoke_make_nest_identifier_a] double_colon(0) identifier(1) Template_opt(2)
-        | [invoke_make_nest_identifier_a] dot(0) identifier(1) Template_opt(2)
-        | [invoke_make_nest_identifier_b] NestIdentifier(0) double_colon(1) identifier(2) Template_opt(3)
-        | [invoke_make_nest_identifier_b] NestIdentifier(0) dot(1) identifier(2) Template_opt(3)
+        : [make_nest_identifier_a] double_colon(0) identifier(1) Template_opt(2)
+        | [make_nest_identifier_a] dot(0) identifier(1) Template_opt(2)
+        | [make_nest_identifier_b] NestIdentifier(0) double_colon(1) identifier(2) Template_opt(3)
+        | [make_nest_identifier_b] NestIdentifier(0) dot(1) identifier(2) Template_opt(3)
         ;
 
     Template<token_type>
-        : [invoke_make_template] l_bracket(0) TemplateArg_opt(1) r_bracket(2)
+        : [make_template] l_bracket(0) TemplateArg_opt(1) r_bracket(2)
         ;
 
     Template_opt<token_type>
-        : [invoke_make_template_opt] Template(0)
+        : [make_template_opt] Template(0)
         | []
         ;
 
     TemplateArg_opt<token_type>
-        : [invoke_make_template_arg] TypeSeq(0)
+        : [make_template_arg] TypeSeq(0)
         | []
         ;
 
     TypeSeq<token_type>
-        : [invoke_make_type_seq] Type(0)
-        | [invoke_make_type_seq] Type(0) TypeSeqRest(1)
+        : [make_type_seq] Type(0)
+        | [make_type_seq] Type(0) TypeSeqRest(1)
         ;
 
     TypeSeqRest<token_type>
-        : [invoke_make_type_seq] comma(0) Type(1)
-        | [invoke_make_type_seq] TypeSeqRest(0) comma(1) Type(2)
+        : [make_type_seq] comma(0) Type(1)
+        | [make_type_seq] TypeSeqRest(0) comma(1) Type(2)
         ;
 
     SymbolType_opt<token_type>
-        : [invoke_make_symbol_type] l_bracket(0) Type(1) r_bracket(2)
+        : [make_symbol_type] l_bracket(0) Type(1) r_bracket(2)
         | []
         ;
 
     LinkDir<token_type>
-        : [invoke_make_link_dir] l_bracket(0) identifier(1) r_bracket(2)
+        : [make_link_dir] l_bracket(0) identifier(1) r_bracket(2)
         ;
 
     BlockWithLinkDir<token_type>
-        : [invoke_make_block_with_linkdir] LinkDir(0) l_curly_bracket(1) SeqStatements(2) r_curly_bracket(3)
+        : [make_block_with_linkdir] LinkDir(0) l_curly_bracket(1) SeqStatements(2) r_curly_bracket(3)
         ;
 
     SeqStatements<token_type>
-        : [invoke_make_seq_statements_a] SeqStatementsElement(0) semicolon(1)
-        | [invoke_eat] semicolon(0)
-        | [invoke_make_seq_statements_b] SeqStatements(0) SeqStatementsElement(1) semicolon(2)
-        | [invoke_eat] SeqStatements(0) semicolon(1)
+        : [make_seq_statements_a] SeqStatementsElement(0) semicolon(1)
+        | [eat] semicolon(0)
+        | [make_seq_statements_b] SeqStatements(0) SeqStatementsElement(1) semicolon(2)
+        | [eat] SeqStatements(0) semicolon(1)
         ;
 
     SeqStatementsElement<token_type>
-        : [invoke_make_seq_statements_element] IdentifierSeq(0)
+        : [make_seq_statements_element] IdentifierSeq(0)
         ;
 
     TopLevelSeqStatements<token_type>
-        : [invoke_make_top_level_seq_statements_a] TopLevelSeqStatementsElement(0)
-        | [invoke_eat] semicolon(0)
-        | [invoke_make_top_level_seq_statements_b] TopLevelSeqStatements(0) TopLevelSeqStatementsElement(1)
-        | [invoke_eat] TopLevelSeqStatements(0) semicolon(1)
+        : [make_top_level_seq_statements_a] TopLevelSeqStatementsElement(0)
+        | [eat] semicolon(0)
+        | [make_top_level_seq_statements_b] TopLevelSeqStatements(0) TopLevelSeqStatementsElement(1)
+        | [eat] TopLevelSeqStatements(0) semicolon(1)
         ;
 
     TopLevelSeqStatementsElement<token_type>
-        : [invoke_make_top_level_seq_statements_element_a] IdentifierSeq(0) semicolon(1)
-        | [invoke_make_top_level_seq_statements_element_b] BlockWithLinkDir(0)
+        : [make_top_level_seq_statements_element_a] IdentifierSeq(0) semicolon(1)
+        | [make_top_level_seq_statements_element_b] BlockWithLinkDir(0)
         ;
 
     Arg_opt<token_type>
-        : [invoke_make_arg] l_round_pare(0) value(1) r_round_pare(2)
+        : [make_arg] l_round_pare(0) value(1) r_round_pare(2)
         | []
         ;
 
     SemanticAction<token_type>
-        : [invoke_make_semantic_action] l_square_bracket(0) SemanticActionElement_opt(1) r_square_bracket(2)
+        : [make_semantic_action] l_square_bracket(0) SemanticActionElement_opt(1) r_square_bracket(2)
         ;
 
     SemanticActionElement_opt<token_type>
-        : [invoke_make_semantic_action_opt] identifier(0)
+        : [make_semantic_action_opt] identifier(0)
         | []
         ;
 
     Tag_opt<token_type>
-        : [invoke_make_tag] l_bracket(0) identifier(1) r_bracket(2)
+        : [make_tag] l_bracket(0) identifier(1) r_bracket(2)
         | []
         ;
 
     RHSSeq<token_type>
-        : [invoke_make_rhs_seq] identifier(0) Arg_opt(1)
-        | [invoke_make_rhs_seq_last] RHSSeq(0) identifier(1) Arg_opt(2)
+        : [make_rhs_seq] identifier(0) Arg_opt(1)
+        | [make_rhs_seq_last] RHSSeq(0) identifier(1) Arg_opt(2)
         ;
 
     RHSSeq_opt<token_type>
-        : [invoke_make_rhs_seq_opt] RHSSeq(0)
+        : [make_rhs_seq_opt] RHSSeq(0)
         | []
         ;
 
     RHS<token_type>
-        : [invoke_make_rhs] SemanticAction(0) Tag_opt(1) RHSSeq_opt(2)
-        | [invoke_make_rhs] RHS(0) symbol_or(1) SemanticAction(2) Tag_opt(3) RHSSeq_opt(4)
+        : [make_rhs] SemanticAction(0) Tag_opt(1) RHSSeq_opt(2)
+        | [make_rhs] RHS(0) symbol_or(1) SemanticAction(2) Tag_opt(3) RHSSeq_opt(4)
         ;
 
     LHS<token_type>
-        : [invoke_make_lhs] identifier(0) LHSType(1)
+        : [make_lhs] identifier(0) LHSType(1)
         ;
 
     LHSType<token_type>
-        : [invoke_make_lhs_type] l_bracket(0) Type(1) r_bracket(2)
+        : [make_lhs_type] l_bracket(0) Type(1) r_bracket(2)
         ;
 
     Exp<token_type>
-        : [invoke_make_expression] LHS(0) symbol_colon(1) RHS(2)
+        : [make_expression] LHS(0) symbol_colon(1) RHS(2)
         ;
 
     ExpStatements<token_type>
-        : [invoke_make_exp_statements_a] Exp(0) semicolon(1)
-        | [invoke_eat] semicolon(0)
-        | [invoke_make_exp_statements_b] ExpStatements(0) Exp(1) semicolon(2)
-        | [invoke_eat] ExpStatements(0) semicolon(1)
+        : [make_exp_statements_a] Exp(0) semicolon(1)
+        | [eat] semicolon(0)
+        | [make_exp_statements_b] ExpStatements(0) Exp(1) semicolon(2)
+        | [eat] ExpStatements(0) semicolon(1)
         ;
 
     TokenHeaderRest_opt<token_type>
-        : [invoke_make_token_header_rest] comma(0) identifier(1)
+        : [make_token_header_rest] comma(0) identifier(1)
         | []
         ;
 
     TokenHeader<token_type>
-        : [invoke_make_header] l_bracket(0) identifier(1) TokenHeaderRest_opt(2) r_bracket(3)
+        : [make_header] l_bracket(0) identifier(1) TokenHeaderRest_opt(2) r_bracket(3)
         ;
 
     TokenBody<token_type>
-        : [invoke_make_token_body] l_curly_bracket(0) TopLevelSeqStatements(1) r_curly_bracket(2)
+        : [make_token_body] l_curly_bracket(0) TopLevelSeqStatements(1) r_curly_bracket(2)
         ;
 
     GrammarHeader<token_type>
-        : [invoke_make_header] l_bracket(0) identifier(1) r_bracket(2)
+        : [make_header] l_bracket(0) identifier(1) r_bracket(2)
         ;
 
     DefaultSemanticAction_opt<token_type>
-        : [invoke_make_default_semantic_action] l_square_bracket(0) identifier(1) r_square_bracket(2)
+        : [make_default_semantic_action] l_square_bracket(0) identifier(1) r_square_bracket(2)
         | []
         ;
 
     GrammarBody<token_type>
-        : [invoke_make_grammar_body] l_curly_bracket(0) DefaultSemanticAction_opt(1) ExpStatements(2) r_curly_bracket(3)
+        : [make_grammar_body] l_curly_bracket(0) DefaultSemanticAction_opt(1) ExpStatements(2) r_curly_bracket(3)
         ;
 
     TokenNamespace<token_type>
-        : [invoke_make_token_namespace] identifier(0)
+        : [make_token_namespace] identifier(0)
         | []
         ;
 
     GrammarNamespace<token_type>
-        : [invoke_make_grammar_namespace] identifier(0)
+        : [make_grammar_namespace] identifier(0)
         ;
 }
 

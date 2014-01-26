@@ -4,6 +4,9 @@
 #include <vector>
 #include <unordered_map>
 #include <cstdlib>
+#include "scanner_lexer.hpp"
+#include "scanner.hpp"
+#include "exception.hpp"
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/stringize.hpp>
 #include <boost/preprocessor/seq/size.hpp>
@@ -11,9 +14,6 @@
 #include <boost/preprocessor/arithmetic/inc.hpp>
 #include <boost/preprocessor/arithmetic/mul.hpp>
 #include <boost/preprocessor/arithmetic/div.hpp>
-#include "scanner_lexer.hpp"
-#include "scanner.hpp"
-#include "exception.hpp"
 
 namespace kp19pp{
     namespace scanner{
@@ -801,10 +801,10 @@ namespace kp19pp{
                 return eat(value, data);
             }
 
-            token_type make_rhs_rest(const semantic_type::value_type &value, scanner_type &data){
-                data.clear_rhs_number();
-                return eat(value, data);
-            }
+            //token_type make_rhs_rest(const semantic_type::value_type &value, scanner_type &data){
+            //    data.clear_rhs_number();
+            //    return eat(value, data);
+            //}
 
             token_type make_lhs(const semantic_type::value_type &value, scanner_type &data){
                 auto &identifier(value[0]);
@@ -1334,10 +1334,8 @@ namespace kp19pp{
                 string.reserve(str_.size());
                 string.assign(str_.begin(), str_.end());
             }
-            scanner::iterator<scanner_string_type::iterator>
-                begin = string.begin(),
-                end = string.end();
-            impl::lexer::tokenize(
+            scanner_string_type::iterator begin = string.begin(), end = string.end();
+            lexer::tokenize(
                 begin, end,
                 [&](
                     scanner_type::term_type t,
@@ -1346,7 +1344,7 @@ namespace kp19pp{
                 ){
                     token_seq.push_back(
                         token_type(
-                            string_iter_pair_type(a.place, b.place),
+                            string_iter_pair_type(a.end, b.end),
                             t, b.char_count, b.line_count
                         )
                     );
