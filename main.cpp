@@ -5,16 +5,15 @@
 #include "scanner.hpp"
 #include "target.hpp"
 
-int main(int argc, char *argv[]){
-    //char *argv[] = {
-    //    "dummy",
-    //    "-hs",
-    //    "-indent=space4",
-    //    "-time",
-    //    "sample.txt",
-    //    "Parser.hs"
-    //};
-    //int argc = sizeof(argv) / sizeof(*argv);
+int main(){
+    char *argv[] = {
+        "dummy",
+        "-c++",
+        "-indent=space4",
+        "sample.txt",
+        "sample.cpp"
+    };
+    int argc = sizeof(argv) / sizeof(*argv);
 
     try{
         kp19pp::commandline_options_type commandline_options;

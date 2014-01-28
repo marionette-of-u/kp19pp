@@ -6,7 +6,6 @@
 #include <utility>
 #include "kp19pp.hpp"
 #include "common.hpp"
-#include "scanner_lexer_token.hpp"
 
 namespace kp19pp{
     namespace scanner{
@@ -128,7 +127,7 @@ namespace kp19pp{
                     rhs_type::hash
                 > rhs_set_type;
 
-                token_type      type;
+                token_type      default_semantic_action, type;
                 rhs_set_type    rhs;
             };
 
@@ -214,31 +213,40 @@ namespace kp19pp{
         };
 
 #define KP19PP_SCANNER_DECL_TERMINAL_SYMBOLS() \
-    DECL(identifier); \
-    DECL(value); \
-    DECL(comma); \
-    DECL(dot); \
-    DECL(asterisk); \
-    DECL(ampersand); \
-    DECL(double_colon); \
-    DECL(semicolon); \
-    DECL(l_square_bracket); \
-    DECL(r_square_bracket); \
-    DECL(l_curly_bracket); \
-    DECL(r_curly_bracket); \
-    DECL(l_bracket); \
-    DECL(r_bracket); \
-    DECL(l_round_pare); \
-    DECL(r_round_pare); \
-    DECL(symbol_or); \
-    DECL(symbol_colon); \
-    DECL(equal); \
+    DECL(identifier) \
+    DECL(value) \
+    DECL(comma) \
+    DECL(dot) \
+    DECL(question) \
+    DECL(plus) \
+    DECL(asterisk) \
+    DECL(ampersand) \
+    DECL(double_colon) \
+    DECL(semicolon) \
+    DECL(l_square_bracket) \
+    DECL(r_square_bracket) \
+    DECL(l_curly_bracket) \
+    DECL(r_curly_bracket) \
+    DECL(l_bracket) \
+    DECL(r_bracket) \
+    DECL(l_round_pare) \
+    DECL(r_round_pare) \
+    DECL(symbol_or) \
+    DECL(symbol_colon) \
+    DECL(equal) \
     DECL(str)
+
+        enum token{
+#define DECL(name) token_ ## name ,
+            token_0,
+            KP19PP_SCANNER_DECL_TERMINAL_SYMBOLS()
+#undef DECL
+        };
 
         namespace terminal_symbol{
 #define DECL(name) \
     extern scanner_type::term_type name;
-            KP19PP_SCANNER_DECL_TERMINAL_SYMBOLS();
+            KP19PP_SCANNER_DECL_TERMINAL_SYMBOLS()
 #undef DECL
         }
     }

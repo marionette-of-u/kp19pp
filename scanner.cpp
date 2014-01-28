@@ -660,6 +660,42 @@ namespace kp19pp{
                 return value[1];
             }
 
+            token_type make_rhs_seq_in_group_a(const semantic_type::value_type &value, scanner_type &data){
+                return eat(value, data);
+            }
+
+            token_type make_rhs_seq_in_group_b(const semantic_type::value_type &value, scanner_type &data){
+                return eat(value, data);
+            }
+
+            token_type make_rhs_seq_in_group_c(const semantic_type::value_type &value, scanner_type &data){
+                return eat(value, data);
+            }
+
+            token_type make_rhs_group_semantic_action(const semantic_type::value_type &value, scanner_type &data){
+                return eat(value, data);
+            }
+
+            token_type make_rhs_group_a(const semantic_type::value_type &value, scanner_type &data){
+                return eat(value, data);
+            }
+
+            token_type make_rhs_group_b(const semantic_type::value_type &value, scanner_type &data){
+                return eat(value, data);
+            }
+
+            token_type make_top_level_rhs_group(const semantic_type::value_type &value, scanner_type &data){
+                return eat(value, data);
+            }
+
+            token_type make_group_seq(const semantic_type::value_type &value, scanner_type &data){
+                return eat(value, data);
+            }
+
+            token_type make_group_seq_last(const semantic_type::value_type &value, scanner_type &data){
+                return eat(value, data);
+            }
+
             token_type insert_rhs_element(const token_type &identifier, const token_type &arg, const semantic_type::value_type &value, scanner_type &data){
                 scanner_type::symbol_type symbol = make_symbol(identifier, identifier.term);
                 scanner_type::terminal_symbol_map_type::const_iterator find_ret_terminal_symbol = data.terminal_symbol_map.find(symbol);
@@ -800,11 +836,6 @@ namespace kp19pp{
                 data.clear_current_rhs_arg_number();
                 return eat(value, data);
             }
-
-            //token_type make_rhs_rest(const semantic_type::value_type &value, scanner_type &data){
-            //    data.clear_rhs_number();
-            //    return eat(value, data);
-            //}
 
             token_type make_lhs(const semantic_type::value_type &value, scanner_type &data){
                 auto &identifier(value[0]);
@@ -981,7 +1012,13 @@ namespace kp19pp{
             DECL(SemanticAction);
             DECL(SemanticActionElement_opt);
             DECL(Tag_opt);
-            DECL(RHSSeqElement);
+            //DECL(MetaIdentifier);
+            //DECL(RHSSeqElement);
+            //DECL(TopLevelRHSGroup);
+            //DECL(RHSGroupSemanticAction);
+            //DECL(RHSGroup);
+            //DECL(RHSGroupDecl);
+            //DECL(RHSSeqInGroup);
             DECL(RHSSeq);
             DECL(RHSSeq_opt);
             DECL(RHS);
@@ -1158,10 +1195,47 @@ namespace kp19pp{
                 ((l_bracket)(identifier)(r_bracket))                                (make_tag)
             );
 
+            //DECL_SEQS(
+            //    MetaIdentifier,
+            //    ((identifier))                                                      (eat)
+            //);
+
+            //DECL_SEQS(
+            //    RHSSeqInGroup,
+            //    ((MetaIdentifier.lhs)(Arg_opt.lhs))                                 (make_rhs_seq_in_group_a)
+            //    ((RHSSeqInGroup.lhs)(MetaIdentifier.lhs)(Arg_opt.lhs))              (make_rhs_seq_in_group_b)
+            //    ((RHSGroup.lhs)(Arg_opt.lhs))                                       (make_rhs_seq_in_group_c)
+            //);
+
+            //DECL_SEQS(
+            //    RHSGroupDecl,
+            //    ((plus))                                                            (eat)
+            //    ((question))                                                        (eat)
+            //    ((asterisk))                                                        (eat)
+            //);
+
+            //DECL_SEQS(
+            //    RHSGroupSemanticAction,
+            //    ((l_square_bracket)(identifier)(r_square_bracket))                  (make_rhs_group_semantic_action)
+            //);
+
+            //DECL_SEQS(
+            //    RHSGroup,
+            //    ((l_round_pare)(RHSSeqInGroup.lhs)(r_round_pare))                   (make_rhs_group_a)
+            //    ((RHSGroup.lhs)(RHSGroupSemanticAction.lhs)(RHSGroupDecl.lhs))      (make_rhs_group_b)
+            //);
+
+            //DECL_SEQS(
+            //    TopLevelRHSGroup,
+            //    ((RHSGroup.lhs))                                                    (make_top_level_rhs_group)
+            //);
+
             DECL_SEQS(
                 RHSSeq,
                 ((identifier)(Arg_opt.lhs))                                         (make_rhs_seq)
+                //((TopLevelRHSGroup.lhs)(Arg_opt.lhs))                               (make_group_seq)
                 ((RHSSeq.lhs)(identifier)(Arg_opt.lhs))                             (make_rhs_seq_last)
+                //((RHSSeq.lhs)(TopLevelRHSGroup.lhs)(Arg_opt.lhs))                   (make_group_seq_last)
             );
 
             DECL_SEQS_EPS(
@@ -1344,7 +1418,7 @@ namespace kp19pp{
                 ){
                     token_seq.push_back(
                         token_type(
-                            string_iter_pair_type(a.end, b.end),
+                            string_iter_pair_type(a.place, b.place),
                             t, b.char_count, b.line_count
                         )
                     );
@@ -1385,29 +1459,29 @@ namespace kp19pp{
             }
 
             {
-                /*
-                // ログを残す
-                std::ofstream parsing_log("parsing_log.txt");
-                auto put_fn = [&](const item_type &item) -> void{
-                    parsing_log << "reduce " << term_to_str(item.lhs) << " :";
-                    for(auto term_iter = item.rhs->begin(), term_end = item.rhs->end(); term_iter != term_end; ++term_iter){
-                        parsing_log << " " << term_to_str(*term_iter);
-                    }
-                    parsing_log << "\n";
-                };
+                
+                //// ログを残す
+                //std::ofstream parsing_log("parsing_log.txt");
+                //auto put_fn = [&](const item_type &item) -> void{
+                //    parsing_log << "reduce " << term_to_str(item.lhs) << " :";
+                //    for(auto term_iter = item.rhs->begin(), term_end = item.rhs->end(); term_iter != term_end; ++term_iter){
+                //        parsing_log << " " << term_to_str(*term_iter);
+                //    }
+                //    parsing_log << "\n";
+                //};
 
-                auto error_fn = [&](token_seq_type::const_iterator iter) -> void{
-                    parsing_log
-                        << "error : "
-                        << iter->line_num + 1
-                        << ", "
-                        << iter->char_num + 1
-                        << ", "
-                        << term_to_str(iter->term)
-                        << "\n";
-                    throw(exception("grammar error. '" + term_to_str(iter->term) + "'.", iter->char_num, iter->line_num));
-                };
-                */
+                //auto error_fn = [&](token_seq_type::const_iterator iter) -> void{
+                //    parsing_log
+                //        << "error : "
+                //        << iter->line_num + 1
+                //        << ", "
+                //        << iter->char_num + 1
+                //        << ", "
+                //        << term_to_str(iter->term)
+                //        << "\n";
+                //    throw(exception("grammar error. '" + term_to_str(iter->term) + "'.", iter->char_num, iter->line_num));
+                //};
+                
 
                 //ログを残さない
                 auto put_fn = [](const item_type&) -> void{  };
