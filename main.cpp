@@ -11,7 +11,7 @@ int main(){
         "-c++",
         "-indent=space4",
         "sample.txt",
-        "sample.cpp"
+        "sample.hpp"
     };
     int argc = sizeof(argv) / sizeof(*argv);
 

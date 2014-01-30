@@ -11,15 +11,16 @@ namespace kp19pp{
         }
 
         semantic_type::semantic_type() :
-            action(nullptr), type(nullptr), argindex_to_symbol_map(nullptr)
+            action(nullptr), pre_action(nullptr), type(nullptr), argindex_to_symbol_map(nullptr)
         {}
 
         semantic_type::semantic_type(const semantic_type &other) :
-            action(other.action), type(other.type), argindex_to_symbol_map(other.argindex_to_symbol_map)
+            action(other.action), pre_action(other.pre_action), type(other.type), argindex_to_symbol_map(other.argindex_to_symbol_map)
         {}
 
         semantic_type::semantic_type(semantic_type &&other) :
             action(std::move(other.action)),
+            pre_action(std::move(other.pre_action)),
             type(std::move(other.type)),
             argindex_to_symbol_map(std::move(other.argindex_to_symbol_map))
         {}

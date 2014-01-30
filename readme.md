@@ -23,17 +23,18 @@ Vim scriptのコード生成をする場合は`-vimscript`,
 ## フォーマット
 &lt; <b><i>token-header</i></b> &gt; <b><i>token-prefix</i></b> {  
 &nbsp;&nbsp;&nbsp;&nbsp;&lt; <b><i>link-direction</i></b> &gt;{  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><i>terminal-symbol</i></b> &lt; <b><i>terminal-symbol-type</i></b> &gt; , ..., <b><i>terminal-symbol</i></b> &lt; <b><i>terminal-symbol-type</i></b> &gt; ;  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><i>terminal-symbol</i></b> &lt; <b><i>terminal-symbol-type</i></b> &gt;  ... <b><i>terminal-symbol</i></b> &lt; <b><i>terminal-symbol-type</i></b> &gt; ;  
 &nbsp;&nbsp;&nbsp;&nbsp;}  
-&nbsp;&nbsp;&nbsp;&nbsp;<b><i>terminal-symbol</i></b> &lt; <b><i>terminal-symbol-type</i></b> &gt; , ..., <b><i>terminal-symbol</i></b> &lt; <b><i>terminal-symbol-type</i></b> &gt; ;  
+&nbsp;&nbsp;&nbsp;&nbsp;<b><i>terminal-symbol</i></b> &lt; <b><i>terminal-symbol-type</i></b> &gt;  ... <b><i>terminal-symbol</i></b> &lt; <b><i>terminal-symbol-type</i></b> &gt; ;  
 }  
 
 &lt; <b><i>grammar-header</i></b> &gt; <b><i>namespace</i></b> {  
 &nbsp;&nbsp;&nbsp;&nbsp;<b><i>nonterminal-symbol</i></b> &lt; <b><i>nonterminal-symbol-type</i></b> &gt;  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: [ <b><i>semantic-action</i></b> ] <b><i>symbol</i></b> ( <b><i>arg-num</i></b> ) , ..., <b><i>symbol</i></b> ( <b><i>arg-num</i></b> )   
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| [ <b><i>semantic-action</i></b> ] <b><i>symbol</i></b> ( <b><i>arg-num</i></b> ) , ..., <b>
-<i>symbol</i></b> ( <b><i>arg-num</i></b> )   
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| [ <b><i>semantic-action</i></b> ] &lt; <b><i>precedence-symbol</i></b> &gt; <b><i>symbol</i></b> ( <b><i>arg-num</i></b> ) , ..., <b><i>symbol</i></b> ( <b><i>arg-num</i></b> )   
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: [ <b><i>semantic-action</i></b> ] <b><i>symbol</i></b> &lt; <b><i>arg-num</i></b> &gt;  ... <b><i>symbol</i></b> &lt; <b><i>arg-num</i></b> &gt;   
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| [ <b><i>semantic-action</i></b> ] <b><i>symbol</i></b> &lt; <b><i>arg-num</i></b> &gt;  ... <b>
+<i>symbol</i></b> &lt; <b><i>arg-num</i></b> &gt;   
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| [ <b><i>semantic-action</i></b> ] &lt; <b><i>precedence-symbol</i></b> &gt; <b><i>symbol</i></b> &lt; <b><i>arg-num</i></b> &gt;  ... <b><i>symbol</i></b> &lt; <b><i>arg-num</i></b> &gt;   
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| [ <b><i>semantic-action</i></b> ] <b><i>symbol</i></b> [ <b><i>q-semantic-action</b></i> ] &lt; <b><i>q-type</i></b> &gt; <b><i>quantification</i></b>  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;  
 }  
 
@@ -82,50 +83,23 @@ Vim scriptのコード生成をする場合は`-vimscript`,
 - symbol  
 終端記号あるいは非終端記号. 
 
-- ( arg-num )  
+- &lt; arg-num &gt;  
 セマンティックアクションの何番目の引数となるかを表す数値.   
 省略した場合はその記号は引数として扱われない.   
 
 - &lt; precedence-symbol &gt;  
 終端記号precedence-symbolが与えられた規則は強制的にその終端記号の優先順位に変更される.   
 
-## 具体的な例
+- q-type  
+量化子修飾によって示される型.   
 
-    <token_desc> token{
-        <right>{ unary_minus; }
-        <left>{
-            ast;
-            pls, mns;
-        }
-        l_paren, r_paren;
-        id<int>;
-    }
+- q-semantic-action  
+量化子修飾のマッチ時に動作するセマンティックアクション.  
 
-    <grammar> grammar{
-        E<int>
-            : [make_pls] E(0) pls E(1)
-            | [make_mns] E(0) mns E(1)
-            | [make_mlt] E(0) ast E(1)
-            | [make_exp] l_paren E(0) r_paren
-            | [make_ums] <unary_minus> mns E(0)
-            | [make_id]  id(0)
-            ;
-    }
-
-以上は,  
-<pre><code>「優先順位を1位, 2位, 3位, ...と数え始め」, 「一連のトークンの型をtoken型とし」, 
-「優先順位1位, 右結合のトークンunary_minusを定義」. 
-「優先順位2位, 左結合のトークンastを定義」. 
-「優先順位3位, 左結合のトークンplsとmnsを定義」. 
-「優先順位4位, 結合方向指定なしのトークンl_paren, r_parenを定義」. 
-「優先順位5位, 結合方向指定なしのint型の値を保持するトークンidを定義」. 
-（文法定義部の説明はcaper, yaccなどとほとんど同じなため省略）
-</code></pre>
-という意味の文法を定義した例である. 
-
-# 出力
-参照 <http://caper.googlecode.com/svn/trunk/caper/site/caper.html>
-ただしtoken\_eofは本プログラムではtoken\_0に置き換えられている. 
+- quantification  
+量化子修飾. 以下の演算子が利用可能.  
+    ?, *, +  
+それぞれ0回か1回の繰り返しにマッチ, 0回以上にマッチ, 1回以上にマッチとなる.  
 
 # ライセンス
 同リポジトリのLICENSES参照. 
