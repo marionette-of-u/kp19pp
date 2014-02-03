@@ -23,10 +23,10 @@ struct iterator{
     {}
 
     ~iterator() = default;
-    iterator &operator =(const Iter &other){
-        place = other;
-        return *this;
-    }
+    //iterator &operator =(const Iter &other){
+    //    place = other;
+    //    return *this;
+    //}
 
     iterator &operator =(const iterator &other){
         place = other.place;
@@ -49,11 +49,11 @@ struct iterator{
         return *place;
     }
 
-    bool operator ==(const Iter &other) const{
-        Iter last = place;
-        --last;
-        return last == other;
-    }
+    //bool operator ==(const Iter &other) const{
+    //    Iter last = place;
+    //    --last;
+    //    return last == other;
+    //}
 
     bool operator ==(const iterator &other) const{
         return place == other.place;
@@ -700,132 +700,132 @@ public:
     }
 
     template<class InputIter>
-    static std::pair<token, InputIter> apply(InputIter first, InputIter last){
-        InputIter iter = first;
+    static std::pair<token, iterator<InputIter>> apply(InputIter first, InputIter last){
+        iterator<InputIter> iter = first;
         std::pair<bool, iterator<InputIter>> result;
         result = reg_whitespace(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_whitespace, iter);
         }
         result = reg_end_of_line(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_end_of_line, iter);
         }
         result = reg_first_line(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_first_line, iter);
         }
         result = reg_identifier(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_identifier, iter);
         }
         result = reg_value(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_value, iter);
         }
         result = reg_comma(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_comma, iter);
         }
         result = reg_dot(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_dot, iter);
         }
         result = reg_question(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_question, iter);
         }
         result = reg_plus(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_plus, iter);
         }
         result = reg_asterisk(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_asterisk, iter);
         }
         result = reg_ampersand(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_ampersand, iter);
         }
         result = reg_double_colon(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_double_colon, iter);
         }
         result = reg_semicolon(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_semicolon, iter);
         }
         result = reg_l_square_bracket(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_l_square_bracket, iter);
         }
         result = reg_r_square_bracket(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_r_square_bracket, iter);
         }
         result = reg_l_curly_bracket(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_l_curly_bracket, iter);
         }
         result = reg_r_curly_bracket(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_r_curly_bracket, iter);
         }
         result = reg_l_bracket(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_l_bracket, iter);
         }
         result = reg_r_bracket(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_r_bracket, iter);
         }
         result = reg_l_round_pare(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_l_round_pare, iter);
         }
         result = reg_r_round_pare(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_r_round_pare, iter);
         }
         result = reg_symbol_or(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_symbol_or, iter);
         }
         result = reg_symbol_colon(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_symbol_colon, iter);
         }
         result = reg_equal(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_equal, iter);
         }
         result = reg_str(iter, last);
         if(result.first){
-            iter = result.second.place;
+            iter = result.second;;
             return std::make_pair(token_str, iter);
         }
         return std::make_pair(token_0, iter);
@@ -838,149 +838,149 @@ public:
         while(iter != end){
             result = reg_whitespace(iter, end);
             if(result.first){
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             result = reg_end_of_line(iter, end);
             if(result.first){
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             result = reg_first_line(iter, end);
             if(result.first){
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             result = reg_identifier(iter, end);
             if(result.first){
                 f(token_identifier, iter, result.second);
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             result = reg_value(iter, end);
             if(result.first){
                 f(token_value, iter, result.second);
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             result = reg_comma(iter, end);
             if(result.first){
                 f(token_comma, iter, result.second);
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             result = reg_dot(iter, end);
             if(result.first){
                 f(token_dot, iter, result.second);
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             result = reg_question(iter, end);
             if(result.first){
                 f(token_question, iter, result.second);
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             result = reg_plus(iter, end);
             if(result.first){
                 f(token_plus, iter, result.second);
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             result = reg_asterisk(iter, end);
             if(result.first){
                 f(token_asterisk, iter, result.second);
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             result = reg_ampersand(iter, end);
             if(result.first){
                 f(token_ampersand, iter, result.second);
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             result = reg_double_colon(iter, end);
             if(result.first){
                 f(token_double_colon, iter, result.second);
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             result = reg_semicolon(iter, end);
             if(result.first){
                 f(token_semicolon, iter, result.second);
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             result = reg_l_square_bracket(iter, end);
             if(result.first){
                 f(token_l_square_bracket, iter, result.second);
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             result = reg_r_square_bracket(iter, end);
             if(result.first){
                 f(token_r_square_bracket, iter, result.second);
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             result = reg_l_curly_bracket(iter, end);
             if(result.first){
                 f(token_l_curly_bracket, iter, result.second);
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             result = reg_r_curly_bracket(iter, end);
             if(result.first){
                 f(token_r_curly_bracket, iter, result.second);
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             result = reg_l_bracket(iter, end);
             if(result.first){
                 f(token_l_bracket, iter, result.second);
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             result = reg_r_bracket(iter, end);
             if(result.first){
                 f(token_r_bracket, iter, result.second);
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             result = reg_l_round_pare(iter, end);
             if(result.first){
                 f(token_l_round_pare, iter, result.second);
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             result = reg_r_round_pare(iter, end);
             if(result.first){
                 f(token_r_round_pare, iter, result.second);
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             result = reg_symbol_or(iter, end);
             if(result.first){
                 f(token_symbol_or, iter, result.second);
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             result = reg_symbol_colon(iter, end);
             if(result.first){
                 f(token_symbol_colon, iter, result.second);
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             result = reg_equal(iter, end);
             if(result.first){
                 f(token_equal, iter, result.second);
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             result = reg_str(iter, end);
             if(result.first){
                 f(token_str, iter, result.second);
-                iter = result.second.place;
+                iter = result.second;;
                 continue;
             }
             break;

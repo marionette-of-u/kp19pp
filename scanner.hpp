@@ -3,7 +3,6 @@
 
 #include <string>
 #include <vector>
-#include <list>
 #include <forward_list>
 #include <utility>
 #include "kp19pp.hpp"
@@ -32,7 +31,7 @@ namespace kp19pp{
             typedef basic_token_type<string_iter_pair_type, term_type> token_type;
             typedef std::vector<token_type> value_type;
             typedef token_type (*action_type)(const value_type&, scanner_type&);
-            action_type action, pre_action;
+            action_type action;
             semantic_type();
             semantic_type(const semantic_type &other);
             semantic_type(semantic_type &&other);
@@ -56,6 +55,15 @@ namespace kp19pp{
                 end_of_seq_functor,
                 epsilon_functor
             > base_type;
+
+        public:
+            enum class rhs_place{
+                n,
+                semantic_action,
+                rhs_seq_head,
+                rhs_seq_rest,
+                extended
+            };
 
         public:
             enum analysis_phase_enum{
@@ -170,6 +178,7 @@ namespace kp19pp{
             scanner_type();
             void scan(std::istream &in);
             void make_target();
+            token_type add_extended_rule_name(const token_type &token);
             term_type next_terminal_symbol_id();
             term_type next_nonterminal_symbol_id();
             std::size_t next_rhs_number();
@@ -180,6 +189,11 @@ namespace kp19pp{
             bool get_scanned_first_nonterminal_symbol() const;
             void set_scanned_first_nonterminal_symbol();
             bool set_scanned_extended_rule(const token_type &token);
+
+            nonterminal_symbol_data_type::rhs_type &current_rhs();
+            nonterminal_symbol_data_type::rhs_type &front_rhs();
+            void push_rhs(rhs_place);
+            void pop_rhs();
 
         private:
             static void define_grammar(scanner_type &scanner);
@@ -194,16 +208,13 @@ namespace kp19pp{
 
         public:
             value_type                              default_semantic_action;
-            token_type                              current_extended_semantic_action,
-                                                    current_extended_decl,
-                                                    current_extended_type;
             token_seq_type                          token_seq;
             string_iter_pair_type                   namespace_token,
                                                     namespace_grammar;
+            token_type                              first_semantic_action;
             std::size_t                             current_priority,
                                                     current_token_number;
             std::vector<terminal_symbol_data_type*> current_terminal_symbol_seq;
-            nonterminal_symbol_data_type::rhs_type  current_rhs;
             terminal_symbol_map_type                terminal_symbol_map;
             nonterminal_symbol_map_type             nonterminal_symbol_map;
             undefined_nonterminal_symbol_set_type   undefined_nonterminal_symbol_set;
@@ -212,6 +223,11 @@ namespace kp19pp{
             symbol_type                             first_nonterminal_symbol;
             number_to_token_map_type                number_to_token_map;
             bool                                    external_token;
+            token_type
+                current_extended_semantic_action,
+                current_extended_decl,
+                current_extended_type;
+            rhs_place rhs_place_state = rhs_place::n;
 
         private:
             scanner_string_type string;
@@ -221,7 +237,10 @@ namespace kp19pp{
                                 current_rhs_arg_number;
             bool                scanned_first_nonterminal_symbol;
 
+            std::vector<nonterminal_symbol_data_type::rhs_type> current_rhs_stack;
+
             declared_extended_set scanned_declared_extended_set;
+            std::forward_list<scanner_string_type> extended_storage;
         };
 
 #define KP19PP_SCANNER_DECL_TERMINAL_SYMBOLS() \

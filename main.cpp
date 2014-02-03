@@ -10,6 +10,7 @@ int main(int argc, char *argv[]){
     //    "dummy",
     //    "-c++",
     //    "-indent=space4",
+    //    "-log",
     //    "sample.txt",
     //    "sample.hpp"
     //};
