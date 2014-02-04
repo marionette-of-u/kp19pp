@@ -789,6 +789,10 @@ namespace kp19pp{
                 return value[0];
             }
 
+            token_type make_extended_semantic_action(const semantic_type::value_type &value, scanner_type &data){
+                return value[0];
+            }
+
             token_type make_extended_decl_opt(const semantic_type::value_type &value, scanner_type &data){
                 data.current_extended_semantic_action = value[1];
                 data.current_extended_type = value[4];
@@ -813,45 +817,7 @@ namespace kp19pp{
                     auto check_arg = [&](scanner_type::nonterminal_symbol_data_type::rhs_type &rhs){
                         std::size_t n = rhs.size();
                         rhs.argindex_max = n - 1;
-                        if(n > 1){
-                            //std::map<std::size_t, token_type> availing_arg_set;
-                            //for(std::size_t i = 0; i < n; ++i){
-                            //    if(rhs[i].second.value.value.empty()){ continue; }
-                            //    scanner_type::nonterminal_symbol_data_type::rhs_type::arg_data_type arg_data;
-                            //    arg_data.symbol = make_symbol(rhs[i].second.value, rhs[i].second.value.term);
-                            //    arg_data.src_index = data.next_rhs_arg_number();
-                            //    std::string str = rhs[i].second.value.value.to_string();
-                            //    std::size_t idx = std::atoi(str.c_str());
-                            //    availing_arg_set.insert(std::make_pair(idx, rhs[i].second.value));
-                            //    auto r = rhs.argindex_to_symbol_map.insert(std::make_pair(idx, arg_data));
-                            //    if(!r.second){
-                            //        throw(
-                            //            exception(
-                            //                "'" +
-                            //                rhs[i].second.value.value.to_string() +
-                            //                "' duplicative argument.",
-                            //                rhs[i].second.value.char_num,
-                            //                rhs[i].second.value.line_num
-                            //            )
-                            //        );
-                            //    }
-                            //}
-                            //std::size_t availing_arg_counter = 0;
-                            //for(const auto i : availing_arg_set){
-                            //    if(i.first != availing_arg_counter){
-                            //        throw(
-                            //            exception(
-                            //                "'" +
-                            //                i.second.value.to_string() +
-                            //                "' missing argument.",
-                            //                i.second.char_num,
-                            //                i.second.line_num
-                            //            )
-                            //        );
-                            //    }
-                            //    ++availing_arg_counter;
-                            //}
-                        } else{
+                        if(n == 1){
                             scanner_type::nonterminal_symbol_data_type::rhs_type::arg_data_type arg_data;
                             arg_data.symbol = make_symbol(rhs[0].first.value, rhs[0].first.value.term);
                             arg_data.src_index = data.next_rhs_arg_number();
@@ -914,6 +880,7 @@ namespace kp19pp{
             token_type make_rhs_seq_element(const semantic_type::value_type &value, scanner_type &data){
                 auto &identifier(value[0]);
                 auto &decl(value[1]);
+                data.current_extended_semantic_action = token_type();
                 if(decl.value.empty()){
                     return identifier;
                 } else{
@@ -930,6 +897,7 @@ namespace kp19pp{
             token_type make_rhs_seq_group(const semantic_type::value_type &value, scanner_type &data){
                 token_type identifier(join_token(value[0], value[2]));
                 auto &decl(value[3]);
+                data.current_extended_semantic_action = token_type();
                 token_type token = join_token(value.front(), value.back());
                 if(decl.value.empty()){
                     return token;
@@ -1197,6 +1165,7 @@ namespace kp19pp{
             DECL(SemanticActionElement_opt);
             DECL(Tag_opt);
             DECL(ExtendedDecl);
+            DECL(ExtendedSemanticAction_opt);
             DECL(ExtendedDecl_opt);
             DECL(RHSSeqElement);
             DECL(RHSSeq);
@@ -1383,8 +1352,13 @@ namespace kp19pp{
             );
 
             DECL_SEQS_EPS(
+                ExtendedSemanticAction_opt,
+                ((identifier))                                                      (make_extended_semantic_action)
+            );
+
+            DECL_SEQS_EPS(
                 ExtendedDecl_opt,
-                ((l_square_bracket)(identifier)(r_square_bracket)(l_bracket)(identifier)(r_bracket)(ExtendedDecl.lhs))
+                ((l_square_bracket)(ExtendedSemanticAction_opt.lhs)(r_square_bracket)(l_bracket)(identifier)(r_bracket)(ExtendedDecl.lhs))
                                                                                     (make_extended_decl_opt)
             );
 

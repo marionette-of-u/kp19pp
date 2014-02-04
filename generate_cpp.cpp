@@ -64,16 +64,16 @@ namespace kp19pp{
             if(!scanner.external_token){
                 // token enumeration
                 if(scanner.namespace_token.empty()){
-                    os << "enum token{\n";
+                    os << "enum class token{\n";
                 }else{
-                    os << "enum " << scanner.namespace_token << "{\n";
+                    os << "enum class " << scanner.namespace_token << "{\n";
                 }
                 for(std::size_t i = 0; i < scanner.number_to_token_map.size(); ++i){
                     auto find_ret(scanner.number_to_token_map.find(i)->second);
-                    os << indent_1 << scanner.namespace_token << "_" << find_ret.value << ",";
+                    os << indent_1 << find_ret.value << ",";
                     os << "\n";
                 }
-                os << indent_1 << scanner.namespace_token << "_" << "0\n"
+                os << indent_1 << "end\n"
                    << "};\n\n";
             }
 
@@ -492,10 +492,10 @@ namespace kp19pp{
                     {
                         auto find_ret = scanner.term_to_token_map.find(action.first);
                         if(find_ret == scanner.term_to_token_map.end()){
-                            case_tag = scanner.namespace_token.to_string() + "_0";
+                            case_tag = scanner.namespace_token.to_string() + "::end";
                         }else{
                             auto &token_name(find_ret->second.value);
-                            case_tag = scanner.namespace_token.to_string() + "_" + token_name.to_string();
+                            case_tag = scanner.namespace_token.to_string() + "::" + token_name.to_string();
                         }
                     }
 
