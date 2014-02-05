@@ -82,12 +82,7 @@ namespace kp19pp{
         }
 
         bool scanner_type::symbol_type::operator <(const symbol_type &other) const{
-            const char *a = &value.value[0], *b = &other.value.value[0];
-            while(*(a++) && *(b++)){
-                if(*a < *b){ return true; }
-                if(*a > *b){ return false; }
-            }
-            return *a && !*b;
+            return std::lexicographical_compare(value.value.begin(), value.value.end(), other.value.value.begin(), other.value.value.end());
         }
 
         std::size_t scanner_type::symbol_type::hash::operator ()(const symbol_type &item) const{
@@ -234,6 +229,38 @@ namespace kp19pp{
             return ret_token;
         }
 
+        scanner_type::token_type scanner_type::add_extended_rule_name(const token_type &token, std::size_t n){
+            std::string value = lexical_cast(n);
+            scanner_string_type str(token.value.begin(), token.value.end());
+            value.push_back('#');
+            for(const auto c : value){ str.push_back(c); }
+            extended_storage.push_front(str);
+            token_type ret_token;
+            ret_token.term = token_identifier;
+            ret_token.value = string_iter_pair_type(extended_storage.front().begin(), extended_storage.front().end());
+            return ret_token;
+        }
+
+        scanner_type::nonterminal_symbol_data_type &scanner_type::make_nonterminal_symbol(token_type &token, const token_type &nonterminal_type){
+            scanner_type::symbol_type nonterminal_symbol;
+            token.term = next_nonterminal_symbol_id();
+            nonterminal_symbol.value = token;
+            nonterminal_symbol_data_type nonterminal_symbol_data;
+            nonterminal_symbol_data.type = nonterminal_type;
+            auto r = nonterminal_symbol_map.insert(std::make_pair(nonterminal_symbol, nonterminal_symbol_data));
+            return r.first->second;
+        }
+
+        void scanner_type::inc_union_num(){
+            ++union_num;
+        }
+
+        std::size_t scanner_type::clear_union_num(){
+            std::size_t r = union_num;
+            union_num = 0;
+            return r;
+        }
+
         scanner_type::nonterminal_symbol_data_type::rhs_type &scanner_type::current_rhs(){
             return current_rhs_stack.back();
         }
@@ -249,6 +276,14 @@ namespace kp19pp{
 
         void scanner_type::pop_rhs(){
             current_rhs_stack.pop_back();
+        }
+
+        void scanner_type::clear_extended_data(){
+            current_extended_semantic_action = token_type();
+            current_extended_decl = token_type();
+            current_extended_type = token_type();
+            rhs_place_state = rhs_place::n;
+            clear_union_num();
         }
 
         void scanner_type::check_undefined_nonterminal_symbol(){
@@ -800,6 +835,17 @@ namespace kp19pp{
                 return join_token(value.front(), value.back());
             }
 
+            void check_arg(scanner_type &data, scanner_type::nonterminal_symbol_data_type::rhs_type &rhs){
+                std::size_t n = rhs.size();
+                rhs.argindex_max = n - 1;
+                if(n == 1){
+                    scanner_type::nonterminal_symbol_data_type::rhs_type::arg_data_type arg_data;
+                    arg_data.symbol = make_symbol(rhs[0].first.value, rhs[0].first.value.term);
+                    arg_data.src_index = data.next_rhs_arg_number();
+                    rhs.argindex_to_symbol_map.insert(std::make_pair(0, arg_data));
+                }
+            }
+
             void make_ebnf_rule(
                 scanner_type &data,
                 scanner_type::nonterminal_symbol_data_type::rhs_type original_rhs,
@@ -807,27 +853,10 @@ namespace kp19pp{
                 token_type &token
             ){
                 if(data.set_scanned_extended_rule(token)){
-                    scanner_type::symbol_type nonterminal_symbol;
-                    token.term = data.next_nonterminal_symbol_id();
-                    nonterminal_symbol = make_symbol(token, token.term);
-                    scanner_type::nonterminal_symbol_data_type nonterminal_symbol_data;
-                    nonterminal_symbol_data.type = data.current_extended_type;
-                    data.nonterminal_symbol_map.insert(std::make_pair(nonterminal_symbol, nonterminal_symbol_data));
-
-                    auto check_arg = [&](scanner_type::nonterminal_symbol_data_type::rhs_type &rhs){
-                        std::size_t n = rhs.size();
-                        rhs.argindex_max = n - 1;
-                        if(n == 1){
-                            scanner_type::nonterminal_symbol_data_type::rhs_type::arg_data_type arg_data;
-                            arg_data.symbol = make_symbol(rhs[0].first.value, rhs[0].first.value.term);
-                            arg_data.src_index = data.next_rhs_arg_number();
-                            rhs.argindex_to_symbol_map.insert(std::make_pair(0, arg_data));
-                        }
-                    };
-                    
+                    scanner_type::nonterminal_symbol_data_type &nonterminal_symbol_data(data.make_nonterminal_symbol(token, data.current_extended_type));
                     if(data.current_extended_decl.value.to_string() == "?"){
                         scanner_type::nonterminal_symbol_data_type::rhs_type rhs(original_rhs);
-                        check_arg(rhs);
+                        check_arg(data, rhs);
                         rhs.semantic_action = data.current_extended_semantic_action;
                         nonterminal_symbol_data.rhs.insert(rhs);
                         nonterminal_symbol_data.rhs.insert(scanner_type::nonterminal_symbol_data_type::rhs_type());
@@ -835,7 +864,7 @@ namespace kp19pp{
                         nonterminal_data = nonterminal_symbol_data;
                     } else if(data.current_extended_decl.value.to_string() == "*"){
                         scanner_type::nonterminal_symbol_data_type::rhs_type rhs(original_rhs);
-                        check_arg(rhs);
+                        check_arg(data, rhs);
                         scanner_type::symbol_type symbol_b = make_symbol(token, token.term);
                         rhs.push_back(std::make_pair(symbol_b, scanner_type::symbol_type()));
                         rhs.semantic_action = data.current_extended_semantic_action;
@@ -853,7 +882,7 @@ namespace kp19pp{
                         data.nonterminal_symbol_map.insert(std::make_pair(extended_nonterminal_symbol, extended_nonterminal_symbol_data));
                         {
                             scanner_type::nonterminal_symbol_data_type::rhs_type rhs(original_rhs);
-                            check_arg(rhs);
+                            check_arg(data, rhs);
                             scanner_type::symbol_type
                                 symbol_b = make_symbol(extended_token, extended_nonterminal_symbol_id);
                             rhs.push_back(std::make_pair(symbol_b, scanner_type::symbol_type()));
@@ -889,29 +918,69 @@ namespace kp19pp{
                     token_type token = join_token(value.front(), value.back());
                     make_ebnf_rule(data, data.current_rhs(), decl, token);
                     data.pop_rhs();
-                    data.rhs_place_state = scanner_type::rhs_place::extended;
                     return token;
                 }
             }
 
             token_type make_rhs_seq_group(const semantic_type::value_type &value, scanner_type &data){
+                std::size_t union_num = data.clear_union_num();
                 token_type identifier(join_token(value[0], value[2]));
-                auto &decl(value[3]);
+                token_type decl(value[3]);
                 data.current_extended_semantic_action = token_type();
                 token_type token = join_token(value.front(), value.back());
                 if(decl.value.empty()){
-                    return token;
-                } else{
-                    if(data.rhs_place_state == scanner_type::rhs_place::extended){
-                        data.push_rhs(scanner_type::rhs_place::extended);
-                        data.current_rhs() = *(&data.current_rhs() - 1);
+                    if(union_num > 1){
+                        data.set_scanned_extended_rule(identifier);
+                        return identifier;
+                    } else{
+                        return token;
                     }
-                    make_ebnf_rule(data, data.current_rhs(), decl, token);
-                    data.pop_rhs();
-                    data.current_rhs().push_back(std::make_pair(make_symbol(token, token.term), scanner_type::symbol_type()));
-                    data.rhs_place_state = scanner_type::rhs_place::extended;
-                    return token;
                 }
+                data.make_nonterminal_symbol(token, data.current_extended_type);
+                if(union_num > 1){
+                    if(data.set_scanned_extended_rule(identifier)){
+                        scanner_type::nonterminal_symbol_data_type &nonterminal_symbol_data(data.make_nonterminal_symbol(identifier, data.current_extended_type));
+                        scanner_type::nonterminal_symbol_data_type::rhs_set_type &rhs_set(nonterminal_symbol_data.rhs);
+                        for(std::size_t i = 0; i < union_num; ++i){
+                            check_arg(data, data.current_rhs());
+                            rhs_set.insert(data.current_rhs());
+                            data.pop_rhs();
+                        }
+                        auto &nonterminal_data(data.nonterminal_symbol_map.insert(std::make_pair(scanner_type::symbol_type(token), scanner_type::nonterminal_symbol_data_type())).first->second);
+                        scanner_type::nonterminal_symbol_data_type::rhs_type rhs_identifier;
+                        rhs_identifier.push_back(std::make_pair(make_symbol(identifier, identifier.term), scanner_type::symbol_type()));
+                        nonterminal_data.rhs.insert(rhs_identifier);
+                        if(data.set_scanned_extended_rule(token)){
+                            data.push_rhs(scanner_type::rhs_place::extended);
+                            data.current_rhs().push_back(std::make_pair(make_symbol(identifier, identifier.term), scanner_type::symbol_type()));
+                            make_ebnf_rule(data, data.current_rhs(), decl, token);
+                            data.pop_rhs();
+                            data.current_rhs().push_back(std::make_pair(make_symbol(token, token.term), scanner_type::symbol_type()));
+                        }
+                    }
+                } else{
+                    if(data.set_scanned_extended_rule(token)){
+                        if(data.rhs_place_state == scanner_type::rhs_place::extended){
+                            data.push_rhs(scanner_type::rhs_place::extended);
+                            data.current_rhs() = *(&data.current_rhs() - 1);
+                        }
+                        make_ebnf_rule(data, data.current_rhs(), decl, token);
+                        data.pop_rhs();
+                        data.current_rhs().push_back(std::make_pair(make_symbol(token, token.term), scanner_type::symbol_type()));
+                        data.rhs_place_state = scanner_type::rhs_place::extended;
+                    }
+                }
+                return token;
+            }
+
+            token_type make_rhs_union(const semantic_type::value_type &value, scanner_type &data){
+                data.inc_union_num();
+                return value[0];
+            }
+
+            token_type make_rhs_union_rest(const semantic_type::value_type &value, scanner_type &data){
+                data.inc_union_num();
+                return value[2];
             }
 
             token_type make_rhs_seq(const semantic_type::value_type &value, scanner_type &data){
@@ -962,6 +1031,7 @@ namespace kp19pp{
             }
 
             token_type make_rhs(const semantic_type::value_type &value, scanner_type &data){
+                data.rhs_place_state = scanner_type::rhs_place::n;
                 auto &rhs(insert_rhs(data));
                 for(int i = 0, n = rhs.argindex_max; i <= n; ++i){
                     if(rhs.argindex_to_symbol_map.find(i) == rhs.argindex_to_symbol_map.end()){
@@ -987,6 +1057,7 @@ namespace kp19pp{
                 }
                 data.pop_rhs();
                 data.clear_current_rhs_arg_number();
+                data.clear_extended_data();
                 return eat(value, data);
             }
 
@@ -1168,6 +1239,7 @@ namespace kp19pp{
             DECL(ExtendedSemanticAction_opt);
             DECL(ExtendedDecl_opt);
             DECL(RHSSeqElement);
+            DECL(RHSSeqUnion);
             DECL(RHSSeq);
             DECL(RHSSeq_opt);
             DECL(RHS);
@@ -1365,7 +1437,14 @@ namespace kp19pp{
             DECL_SEQS(
                 RHSSeqElement,
                 ((identifier)(ExtendedDecl_opt.lhs))                                (make_rhs_seq_element)
-                ((l_round_pare)(RHSSeq.lhs)(r_round_pare)(ExtendedDecl_opt.lhs))    (make_rhs_seq_group)
+                ((l_round_pare)(RHSSeqUnion.lhs)(r_round_pare)(ExtendedDecl_opt.lhs))
+                                                                                    (make_rhs_seq_group)
+            );
+
+            DECL_SEQS(
+                RHSSeqUnion,
+                ((RHSSeq.lhs))                                                      (make_rhs_union)
+                ((RHSSeqUnion.lhs)(symbol_or)(RHSSeq.lhs))                          (make_rhs_union_rest)
             );
 
             DECL_SEQS(

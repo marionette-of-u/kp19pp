@@ -62,6 +62,7 @@ namespace kp19pp{
                 semantic_action,
                 rhs_seq_head,
                 rhs_seq_rest,
+                union_seq,
                 extended
             };
 
@@ -178,7 +179,8 @@ namespace kp19pp{
             scanner_type();
             void scan(std::istream &in);
             void make_target();
-            token_type add_extended_rule_name(const token_type &token);
+            token_type add_extended_rule_name(const token_type&);
+            token_type add_extended_rule_name(const token_type&, std::size_t);
             term_type next_terminal_symbol_id();
             term_type next_nonterminal_symbol_id();
             std::size_t next_rhs_number();
@@ -189,11 +191,18 @@ namespace kp19pp{
             bool get_scanned_first_nonterminal_symbol() const;
             void set_scanned_first_nonterminal_symbol();
             bool set_scanned_extended_rule(const token_type &token);
+            nonterminal_symbol_data_type &make_nonterminal_symbol(
+                token_type &token,
+                const token_type &nonterminal_type
+            );
 
+            void inc_union_num();
+            std::size_t clear_union_num();
             nonterminal_symbol_data_type::rhs_type &current_rhs();
             nonterminal_symbol_data_type::rhs_type &front_rhs();
             void push_rhs(rhs_place);
             void pop_rhs();
+            void clear_extended_data();
 
         private:
             static void define_grammar(scanner_type &scanner);
@@ -223,6 +232,7 @@ namespace kp19pp{
             symbol_type                             first_nonterminal_symbol;
             number_to_token_map_type                number_to_token_map;
             bool                                    external_token;
+
             token_type
                 current_extended_semantic_action,
                 current_extended_decl,
@@ -237,6 +247,7 @@ namespace kp19pp{
                                 current_rhs_arg_number;
             bool                scanned_first_nonterminal_symbol;
 
+            std::size_t union_num = 0;
             std::vector<nonterminal_symbol_data_type::rhs_type> current_rhs_stack;
 
             declared_extended_set scanned_declared_extended_set;

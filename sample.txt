@@ -6,6 +6,6 @@
 
 <grammar> parser{
     S<int>
-        : [hoge] test<0> (identifier<1> (test<0> hogehoge<1>)[inner_hoge]<int>*<2> hogehoge<0>)[generator]<int>+<1>
+        : [hoge] test<0> (identifier | hogehoge)[aaa]<int>+<1>
         ;
 }
