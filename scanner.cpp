@@ -926,7 +926,6 @@ namespace kp19pp{
                 std::size_t union_num = data.clear_union_num();
                 token_type identifier(join_token(value[0], value[2]));
                 token_type decl(value[3]);
-                data.current_extended_semantic_action = token_type();
                 token_type token = join_token(value.front(), value.back());
                 if(decl.value.empty()){
                     if(union_num > 1){
@@ -956,6 +955,7 @@ namespace kp19pp{
                             make_ebnf_rule(data, data.current_rhs(), decl, token);
                             data.pop_rhs();
                             data.current_rhs().push_back(std::make_pair(make_symbol(token, token.term), scanner_type::symbol_type()));
+                            data.current_rhs().semantic_action = data.current_extended_semantic_action;
                         }
                     }
                 } else{
