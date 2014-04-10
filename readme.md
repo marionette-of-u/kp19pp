@@ -4,7 +4,7 @@ LALR(1) パーサジェネレータ.
 本プログラムはcaperに若干の高速化（漸近的には同等）と, 終端記号の優先順位を付与する事による曖昧さ回避及び限定的な衝突回避の改良を加えたものである.   
 
 # 動作確認
-<table><tr><td>Compiler</td><td>gcc 4.7.2, MSVC 11.0</td></tr><tr><td>Lib</td><td>Boost 1.53.0</td></tr></table>
+<table><tr><td>Compiler</td><td>MSVC 12.0</td></tr><tr><td>Lib</td><td>Boost 1.53.0</td></tr></table>
 
 # 使い方
 ## 実行ファイルの生成

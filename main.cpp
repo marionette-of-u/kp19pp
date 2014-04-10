@@ -14,7 +14,7 @@ int main(int argc, char *argv[]){
     //    "sample.txt",
     //    "sample.hpp"
     //};
-    int argc = sizeof(argv) / sizeof(*argv);
+    //int argc = sizeof(argv) / sizeof(*argv);
 
     try{
         kp19pp::commandline_options_type commandline_options;
