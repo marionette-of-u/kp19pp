@@ -716,7 +716,7 @@ namespace kp19pp{
             token_type make_semantic_action(const semantic_type::value_type &value, scanner_type &data){
                 if(data.first_semantic_action.value.empty()){
                     data.first_semantic_action = value[1];
-                } else if(!data.first_semantic_action.value.empty()){
+                }else{
                     data.front_rhs().semantic_action = data.first_semantic_action;
                     data.first_semantic_action = token_type();
                 }
@@ -922,56 +922,6 @@ namespace kp19pp{
                 }
             }
 
-            token_type make_rhs_seq_group(const semantic_type::value_type &value, scanner_type &data){
-                std::size_t union_num = data.clear_union_num();
-                token_type identifier(join_token(value[0], value[2]));
-                token_type decl(value[3]);
-                token_type token = join_token(value.front(), value.back());
-                if(decl.value.empty()){
-                    if(union_num > 1){
-                        data.set_scanned_extended_rule(identifier);
-                        return identifier;
-                    } else{
-                        return token;
-                    }
-                }
-                auto &nonterminal_data(data.make_nonterminal_symbol(token, data.current_extended_type));
-                if(union_num > 1){
-                    if(data.set_scanned_extended_rule(identifier)){
-                        scanner_type::nonterminal_symbol_data_type &nonterminal_symbol_data(data.make_nonterminal_symbol(identifier, data.current_extended_type));
-                        scanner_type::nonterminal_symbol_data_type::rhs_set_type &rhs_set(nonterminal_symbol_data.rhs);
-                        for(std::size_t i = 0; i < union_num; ++i){
-                            check_arg(data, data.current_rhs());
-                            rhs_set.insert(data.current_rhs());
-                            data.pop_rhs();
-                        }
-                        scanner_type::nonterminal_symbol_data_type::rhs_type rhs_identifier;
-                        rhs_identifier.push_back(std::make_pair(make_symbol(identifier, identifier.term), scanner_type::symbol_type()));
-                        nonterminal_data.rhs.insert(rhs_identifier);
-                        if(data.set_scanned_extended_rule(token)){
-                            data.push_rhs(scanner_type::rhs_place::extended);
-                            data.current_rhs().push_back(std::make_pair(make_symbol(identifier, identifier.term), scanner_type::symbol_type()));
-                            make_ebnf_rule(data, data.current_rhs(), decl, token);
-                            data.pop_rhs();
-                            data.current_rhs().push_back(std::make_pair(make_symbol(token, token.term), scanner_type::symbol_type()));
-                            data.current_rhs().semantic_action = data.current_extended_semantic_action;
-                        }
-                    }
-                } else{
-                    if(data.set_scanned_extended_rule(token)){
-                        if(data.rhs_place_state == scanner_type::rhs_place::extended){
-                            data.push_rhs(scanner_type::rhs_place::extended);
-                            data.current_rhs() = *(&data.current_rhs() - 1);
-                        }
-                        make_ebnf_rule(data, data.current_rhs(), decl, token);
-                        data.pop_rhs();
-                        data.current_rhs().push_back(std::make_pair(make_symbol(token, token.term), scanner_type::symbol_type()));
-                        data.rhs_place_state = scanner_type::rhs_place::extended;
-                    }
-                }
-                return token;
-            }
-
             token_type make_rhs_union(const semantic_type::value_type &value, scanner_type &data){
                 data.inc_union_num();
                 return value[0];
@@ -1027,6 +977,57 @@ namespace kp19pp{
                     );
                 }
                 return rhs;
+            }
+
+            token_type make_rhs_seq_group(const semantic_type::value_type &value, scanner_type &data){
+                std::size_t union_num = data.clear_union_num();
+                token_type identifier(join_token(value[0], value[2]));
+                token_type decl(value[3]);
+                token_type token = join_token(value.front(), value.back());
+                if(decl.value.empty()){
+                    if(union_num > 1){
+                        data.set_scanned_extended_rule(identifier);
+                        return identifier;
+                    } else{
+                        return token;
+                    }
+                }
+                auto &nonterminal_data(data.make_nonterminal_symbol(token, data.current_extended_type));
+                if(union_num > 1){
+                    if(data.set_scanned_extended_rule(identifier)){
+                        scanner_type::nonterminal_symbol_data_type &nonterminal_symbol_data(data.make_nonterminal_symbol(identifier, data.current_extended_type));
+                        scanner_type::nonterminal_symbol_data_type::rhs_set_type &rhs_set(nonterminal_symbol_data.rhs);
+                        for(std::size_t i = 0; i < union_num; ++i){
+                            check_arg(data, data.current_rhs());
+                            rhs_set.insert(data.current_rhs());
+                            data.pop_rhs();
+                        }
+                        scanner_type::nonterminal_symbol_data_type::rhs_type rhs_identifier;
+                        rhs_identifier.push_back(std::make_pair(make_symbol(identifier, identifier.term), scanner_type::symbol_type()));
+                        nonterminal_data.rhs.insert(rhs_identifier);
+                        if(data.set_scanned_extended_rule(token)){
+                            data.push_rhs(scanner_type::rhs_place::extended);
+                            data.current_rhs().push_back(std::make_pair(make_symbol(identifier, identifier.term), scanner_type::symbol_type()));
+                            data.current_rhs().semantic_action = data.current_extended_semantic_action;
+                            make_ebnf_rule(data, data.current_rhs(), decl, token);
+                            insert_rhs(data);
+                            data.pop_rhs();
+                            data.current_rhs().push_back(std::make_pair(make_symbol(token, token.term), scanner_type::symbol_type()));
+                        }
+                    }
+                } else{
+                    if(data.set_scanned_extended_rule(token)){
+                        if(data.rhs_place_state == scanner_type::rhs_place::extended){
+                            data.push_rhs(scanner_type::rhs_place::extended);
+                            data.current_rhs() = *(&data.current_rhs() - 1);
+                        }
+                        make_ebnf_rule(data, data.current_rhs(), decl, token);
+                        data.pop_rhs();
+                        data.current_rhs().push_back(std::make_pair(make_symbol(token, token.term), scanner_type::symbol_type()));
+                        data.rhs_place_state = scanner_type::rhs_place::extended;
+                    }
+                }
+                return token;
             }
 
             token_type make_rhs(const semantic_type::value_type &value, scanner_type &data){
