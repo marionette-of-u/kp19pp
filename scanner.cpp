@@ -935,7 +935,7 @@ namespace kp19pp{
                         return token;
                     }
                 }
-                data.make_nonterminal_symbol(token, data.current_extended_type);
+                auto &nonterminal_data(data.make_nonterminal_symbol(token, data.current_extended_type));
                 if(union_num > 1){
                     if(data.set_scanned_extended_rule(identifier)){
                         scanner_type::nonterminal_symbol_data_type &nonterminal_symbol_data(data.make_nonterminal_symbol(identifier, data.current_extended_type));
@@ -945,7 +945,6 @@ namespace kp19pp{
                             rhs_set.insert(data.current_rhs());
                             data.pop_rhs();
                         }
-                        auto &nonterminal_data(data.nonterminal_symbol_map.insert(std::make_pair(scanner_type::symbol_type(token), scanner_type::nonterminal_symbol_data_type())).first->second);
                         scanner_type::nonterminal_symbol_data_type::rhs_type rhs_identifier;
                         rhs_identifier.push_back(std::make_pair(make_symbol(identifier, identifier.term), scanner_type::symbol_type()));
                         nonterminal_data.rhs.insert(rhs_identifier);

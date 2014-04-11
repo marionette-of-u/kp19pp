@@ -748,25 +748,46 @@ namespace kp19pp{
             static std::pair<bool, InputIter> reg_identifier(InputIter first, InputIter last){
                 InputIter iter = first;
                 bool match = true;
-                do{
-                    if(iter == last){ match = false; } else{
-                        ++iter;
-                        match = true;
-                    }
-                    if(!match){ break; }
+                if(iter == last){ match = false; } else{
                     InputIter iter_prime = iter;
-                    while(iter != last){
+                    do{
                         if(iter == last){ match = false; } else{
-                            ++iter;
-                            match = true;
+                            char c = *iter;
+                            if(
+                                ((c >= 'a') && (c <= 'z')) ||
+                                ((c >= 'A') && (c <= 'Z')) ||
+                                (c == '_')
+                                ){
+                                ++iter;
+                                match = true;
+                            } else{ match = false; }
                         }
-                        if(match){ iter_prime = iter; } else{
-                            iter = iter_prime;
-                            match = true;
-                            break;
+                        if(!match){ iter = iter_prime; break; }
+                        {
+                            InputIter iter_prime = iter;
+                            while(iter != last){
+                                if(iter == last){ match = false; } else{
+                                    char c = *iter;
+                                    if(
+                                        ((c >= '0') && (c <= '9')) ||
+                                        ((c >= 'a') && (c <= 'z')) ||
+                                        ((c >= 'A') && (c <= 'Z')) ||
+                                        (c == '_')
+                                        ){
+                                        ++iter;
+                                        match = true;
+                                    } else{ match = false; }
+                                }
+                                if(match){ iter_prime = iter; } else{
+                                    iter = iter_prime;
+                                    match = true;
+                                    break;
+                                }
+                            }
                         }
-                    }
-                } while(false);
+                        if(!match){ iter = iter_prime; break; }
+                    } while(false);
+                }
                 return std::make_pair(match, iter);
             }
 
