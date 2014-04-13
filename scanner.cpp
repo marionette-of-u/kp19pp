@@ -329,7 +329,9 @@ namespace kp19pp{
                 &nonterminal_symbol_map[first_nonterminal_symbol]
             );
             exception_seq e("unused nonterminal symbol.");
+            std::vector<std::string> test;
             for(auto iter = nonterminal_symbol_map.begin(), end = nonterminal_symbol_map.end(); iter != end; ++iter){
+                test.push_back(iter->first.value.value.to_string());
                 auto term(iter->first.value.term);
                 if(scanned_nonterminal_symbol_set.find(term) == scanned_nonterminal_symbol_set.end()){
                     e.seq.push_back(
@@ -906,22 +908,6 @@ namespace kp19pp{
                 }
             }
 
-            token_type make_rhs_seq_element(const semantic_type::value_type &value, scanner_type &data){
-                auto &identifier(value[0]);
-                auto &decl(value[1]);
-                data.current_extended_semantic_action = token_type();
-                if(decl.value.empty()){
-                    return identifier;
-                } else{
-                    data.push_rhs(scanner_type::rhs_place::extended);
-                    data.current_rhs().push_back(std::make_pair(make_symbol(identifier, identifier.term), scanner_type::symbol_type()));
-                    token_type token = join_token(value.front(), value.back());
-                    make_ebnf_rule(data, data.current_rhs(), decl, token);
-                    data.pop_rhs();
-                    return token;
-                }
-            }
-
             token_type make_rhs_union(const semantic_type::value_type &value, scanner_type &data){
                 data.inc_union_num();
                 return value[0];
@@ -979,59 +965,58 @@ namespace kp19pp{
                 return rhs;
             }
 
+            token_type make_rhs_seq_element(const semantic_type::value_type &value, scanner_type &data){
+                std::size_t union_num = 1;
+                token_type identifier(value[0]);
+                token_type decl(value[1]);
+                token_type token = join_token(value.front(), value.back());
+                if(decl.value.empty()){
+                    data.current_rhs().push_back(std::make_pair(make_symbol(identifier, identifier.term), scanner_type::symbol_type()));
+                    return identifier;
+                } else{
+                    if(data.rhs_place_state == scanner_type::rhs_place::extended){
+                        data.push_rhs(scanner_type::rhs_place::extended);
+                        data.current_rhs().push_back(std::make_pair(make_symbol(identifier, identifier.term), scanner_type::symbol_type()));
+                    }
+                    make_ebnf_rule(data, data.current_rhs(), decl, token);
+                    data.current_rhs().push_back(std::make_pair(make_symbol(token, token.term), scanner_type::symbol_type()));
+                    data.rhs_place_state = scanner_type::rhs_place::extended;
+                    return token;
+                }
+            }
+
             token_type make_rhs_seq_group(const semantic_type::value_type &value, scanner_type &data){
                 std::size_t union_num = data.clear_union_num();
                 token_type identifier(join_token(value[0], value[2]));
                 token_type decl(value[3]);
                 token_type token = join_token(value.front(), value.back());
                 if(decl.value.empty()){
-                    if(union_num > 1){
-                        data.set_scanned_extended_rule(identifier);
-                        return identifier;
-                    } else{
-                        return token;
-                    }
-                }
-                auto &nonterminal_data(data.make_nonterminal_symbol(token, data.current_extended_type));
-                if(union_num > 1){
-                    if(data.set_scanned_extended_rule(identifier)){
-                        scanner_type::nonterminal_symbol_data_type &nonterminal_symbol_data(data.make_nonterminal_symbol(identifier, data.current_extended_type));
-                        scanner_type::nonterminal_symbol_data_type::rhs_set_type &rhs_set(nonterminal_symbol_data.rhs);
-                        for(std::size_t i = 0; i < union_num; ++i){
-                            check_arg(data, data.current_rhs());
-                            rhs_set.insert(data.current_rhs());
-                            data.pop_rhs();
-                        }
-                        scanner_type::nonterminal_symbol_data_type::rhs_type rhs_identifier;
-                        rhs_identifier.push_back(std::make_pair(make_symbol(identifier, identifier.term), scanner_type::symbol_type()));
-                        nonterminal_data.rhs.insert(rhs_identifier);
-                        if(data.set_scanned_extended_rule(token)){
-                            data.push_rhs(scanner_type::rhs_place::extended);
-                            data.current_rhs().push_back(std::make_pair(make_symbol(identifier, identifier.term), scanner_type::symbol_type()));
-                            data.current_rhs().semantic_action = data.current_extended_semantic_action;
-                            make_ebnf_rule(data, data.current_rhs(), decl, token);
-                            insert_rhs(data);
-                            data.pop_rhs();
-                            data.current_rhs().push_back(std::make_pair(make_symbol(token, token.term), scanner_type::symbol_type()));
-                        }
-                    }
+                    return token;
                 } else{
-                    if(data.set_scanned_extended_rule(token)){
-                        if(data.rhs_place_state == scanner_type::rhs_place::extended){
-                            data.push_rhs(scanner_type::rhs_place::extended);
-                            data.current_rhs() = *(&data.current_rhs() - 1);
-                        }
-                        make_ebnf_rule(data, data.current_rhs(), decl, token);
-                        data.pop_rhs();
-                        data.current_rhs().push_back(std::make_pair(make_symbol(token, token.term), scanner_type::symbol_type()));
-                        data.rhs_place_state = scanner_type::rhs_place::extended;
+                    if(data.rhs_place_state == scanner_type::rhs_place::extended){
+                        data.push_rhs(scanner_type::rhs_place::extended);
+                        data.current_rhs() = *(&data.current_rhs() - 1);
                     }
+                    make_ebnf_rule(data, data.current_rhs(), decl, token);
+                    data.current_rhs().push_back(std::make_pair(make_symbol(token, token.term), scanner_type::symbol_type()));
+                    data.rhs_place_state = scanner_type::rhs_place::extended;
+                    return token;
                 }
-                return token;
             }
 
             token_type make_rhs(const semantic_type::value_type &value, scanner_type &data){
                 data.rhs_place_state = scanner_type::rhs_place::n;
+                auto quit_proc = [&](){
+                    data.clear_current_rhs_arg_number();
+                    data.clear_extended_data();
+                };
+                // 量化子修飾で既に登録済みの場合は
+                // duplicative rule error にならないように別途処理を行う.
+                if(data.current_nonterminal_symbol_iter->second.rhs.find(data.current_rhs()) != data.current_nonterminal_symbol_iter->second.rhs.end()){
+                    data.current_rhs().number = data.next_rhs_number();
+                    quit_proc();
+                    return eat(value, data);
+                }
                 auto &rhs(insert_rhs(data));
                 for(int i = 0, n = rhs.argindex_max; i <= n; ++i){
                     if(rhs.argindex_to_symbol_map.find(i) == rhs.argindex_to_symbol_map.end()){
@@ -1055,9 +1040,7 @@ namespace kp19pp{
                         );
                     }
                 }
-                data.pop_rhs();
-                data.clear_current_rhs_arg_number();
-                data.clear_extended_data();
+                quit_proc();
                 return eat(value, data);
             }
 
