@@ -1,0 +1,11 @@
+<token_desc> token{
+    identifier<int>;
+    test<int>;
+    hogehoge<int>;
+}
+
+<grammar> parser{
+    S<int>
+        : [hoge] test<0> (identifier | hogehoge)[aaa]<int>+<1>
+        ;
+}

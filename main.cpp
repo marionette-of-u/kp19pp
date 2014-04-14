@@ -6,15 +6,15 @@
 #include "target.hpp"
 
 int main(int argc, char *argv[]){
-    //char *argv[] = {
-    //    "dummy",
-    //    "-hs",
-    //    "-indent=space2",
-    //    "-time",
-    //    "sample.txt",
-    //    "Parser.hs"
-    //};
-    //int argc = sizeof(argv) / sizeof(*argv);
+    char *argv_[] = {
+        "dummy",
+        "-c++",
+        "-indent=space4",
+        "-log",
+        "sample.txt",
+        "sample.hpp"
+    };
+    int argc_ = sizeof(argv_) / sizeof(*argv_);
 
     try{
         kp19pp::commandline_options_type commandline_options;
