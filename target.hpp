@@ -1,4 +1,4 @@
-﻿#ifndef KP19PP_TARGET_HPP_
+#ifndef KP19PP_TARGET_HPP_
 #define KP19PP_TARGET_HPP_
 
 #include <fstream>
@@ -24,7 +24,7 @@ namespace kp19pp{
             semantic_type();
             semantic_type(const semantic_type &other);
             semantic_type(semantic_type &&other);
-            const string_iter_pair_type *action, *pre_action, *type;
+            const string_iter_pair_type *action, *type;
             const scanner::scanner_type::nonterminal_symbol_data_type::rhs_type::argindex_to_symbol_map_type *argindex_to_symbol_map;
         };
 

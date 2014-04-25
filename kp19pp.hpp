@@ -1,4 +1,4 @@
-﻿#ifndef KP19PP_HPP_
+#ifndef KP19PP_HPP_
 #define KP19PP_HPP_
 
 #include <iostream>
@@ -51,36 +51,18 @@ namespace kp19pp{
         typedef Value value_type;
         typedef Term term_type;
 
-        basic_token_type()
-            : value(), term(), char_num(0), line_num()
+        basic_token_type() = default;
+        basic_token_type(const basic_token_type&) = default;
+        ~basic_token_type() = default;
+
+        basic_token_type(const value_type &v, const term_type &t, std::size_t char_num, std::size_t line_num) :
+            value(v), term(t), char_num(char_num), line_num(line_num)
         {}
 
-        basic_token_type(const value_type &value_, const term_type &term_, std::size_t char_num_, std::size_t line_num_) :
-            value(value_),
-            term(term_),
-            char_num(char_num_),
-            line_num(line_num_)
-        {}
+        value_type value = value_type();
+        term_type term = term_type();
+        std::size_t char_num = 0, line_num = 0;
 
-        basic_token_type(const basic_token_type &other)
-            : value(other.value), term(other.term), char_num(other.char_num), line_num(other.line_num)
-        {}
-
-        basic_token_type(basic_token_type &&other)
-            : value(std::move(other.value)), term(std::move(other.term)), char_num(std::move(other.char_num)), line_num(std::move(other.line_num))
-        {}
-
-        basic_token_type &operator =(const basic_token_type &other){
-            value = other.value;
-            term = other.term;
-            char_num = other.char_num;
-            line_num = other.line_num;
-            return *this;
-        }
-
-        value_type value;
-        term_type term;
-        std::size_t char_num, line_num;
         struct hash{
             std::size_t operator ()(const basic_token_type &item) const{
                 return typename value_type::hash()(item.value);
@@ -492,11 +474,11 @@ namespace kp19pp{
                 avoid_conflict(false),
                 disambiguating(false),
                 put_time(false),
-                put_alltime(false),
+                put_totaltime(false),
                 put_log(false)
             {}
 
-            bool avoid_conflict, disambiguating, put_time, put_alltime, put_log;
+            bool avoid_conflict, disambiguating, put_time, put_totaltime, put_log;
         };
 
         void add_terminal_symbol(const term_type &term, const symbol_data_type &symbol_data){
@@ -563,8 +545,8 @@ namespace kp19pp{
             const IsNotTerminal &is_not_terminal,
             const TermToStr &term_to_str
         ){
-            boost::timer alltime;
-            alltime.restart();
+            boost::timer totaltime;
+            totaltime.restart();
 
             // 非終端記号のデータを収集
             {
@@ -689,8 +671,8 @@ namespace kp19pp{
                 put_parsing_table(ofile, term_to_str);
             }
 
-            if(options.put_alltime){
-                std::cout << "total :\n  " << alltime.elapsed() << "sec\n";
+            if(options.put_totaltime){
+                std::cout << "total :\n  " << totaltime.elapsed() << "sec\n";
             }
 
             return true;

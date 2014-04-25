@@ -1,4 +1,4 @@
-﻿#include "target.hpp"
+#include "target.hpp"
 
 namespace kp19pp{
     namespace target{
@@ -11,16 +11,15 @@ namespace kp19pp{
         }
 
         semantic_type::semantic_type() :
-            action(nullptr), pre_action(nullptr), type(nullptr), argindex_to_symbol_map(nullptr)
+            action(nullptr), type(nullptr), argindex_to_symbol_map(nullptr)
         {}
 
         semantic_type::semantic_type(const semantic_type &other) :
-            action(other.action), pre_action(other.pre_action), type(other.type), argindex_to_symbol_map(other.argindex_to_symbol_map)
+            action(other.action), type(other.type), argindex_to_symbol_map(other.argindex_to_symbol_map)
         {}
 
         semantic_type::semantic_type(semantic_type &&other) :
             action(std::move(other.action)),
-            pre_action(std::move(other.pre_action)),
             type(std::move(other.type)),
             argindex_to_symbol_map(std::move(other.argindex_to_symbol_map))
         {}
@@ -90,7 +89,7 @@ namespace kp19pp{
             options.avoid_conflict = true;
             options.disambiguating = true;
             options.put_time = commandline_options.time();
-            options.put_alltime = commandline_options.alltime();
+            options.put_totaltime = commandline_options.totaltime();
             options.put_log = commandline_options.log();
             bool result = base_type::make_parsing_table(
                 expression_start_prime,

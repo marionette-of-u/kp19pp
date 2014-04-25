@@ -1,10 +1,11 @@
-﻿#include "exception.hpp"
+#include "exception.hpp"
+#include "common.hpp"
 
 namespace kp19pp{
     exception::exception(const std::string &str, std::size_t char_num_, std::size_t line_num_) :
         std::runtime_error(str),
-        char_num(char_num_),
-        line_num(line_num_)
+        char_num(0),
+        line_num(0)
     {}
 
     exception::exception(const exception &other) :

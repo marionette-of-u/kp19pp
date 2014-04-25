@@ -23,18 +23,18 @@ Vim scriptのコード生成をする場合は`-vimscript`,
 ## フォーマット
 &lt; <b><i>token-header</i></b> &gt; <b><i>token-prefix</i></b> {  
 &nbsp;&nbsp;&nbsp;&nbsp;&lt; <b><i>link-direction</i></b> &gt;{  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><i>terminal-symbol</i></b> &lt; <b><i>terminal-symbol-type</i></b> &gt;  ... <b><i>terminal-symbol</i></b> &lt; <b><i>terminal-symbol-type</i></b> &gt; ;  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><i>terminal-symbol</i></b> &lt; <b><i>terminal-symbol-type</i></b> &gt; , ..., <b><i>terminal-symbol</i></b> &lt; <b><i>terminal-symbol-type</i></b> &gt; ;  
 &nbsp;&nbsp;&nbsp;&nbsp;}  
-&nbsp;&nbsp;&nbsp;&nbsp;<b><i>terminal-symbol</i></b> &lt; <b><i>terminal-symbol-type</i></b> &gt;  ... <b><i>terminal-symbol</i></b> &lt; <b><i>terminal-symbol-type</i></b> &gt; ;  
+&nbsp;&nbsp;&nbsp;&nbsp;<b><i>terminal-symbol</i></b> &lt; <b><i>terminal-symbol-type</i></b> &gt; , ..., <b><i>terminal-symbol</i></b> &lt; <b><i>terminal-symbol-type</i></b> &gt; ;  
 }  
 
 &lt; <b><i>grammar-header</i></b> &gt; <b><i>namespace</i></b> {  
+&nbsp;&nbsp;&nbsp;&nbsp;[ <b><i>default-semantic-action</b></i> ]  
 &nbsp;&nbsp;&nbsp;&nbsp;<b><i>nonterminal-symbol</i></b> &lt; <b><i>nonterminal-symbol-type</i></b> &gt;  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: [ <b><i>semantic-action</i></b> ] <b><i>symbol</i></b> &lt; <b><i>arg-num</i></b> &gt;  ... <b><i>symbol</i></b> &lt; <b><i>arg-num</i></b> &gt;   
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| [ <b><i>semantic-action</i></b> ] <b><i>symbol</i></b> &lt; <b><i>arg-num</i></b> &gt;  ... <b>
-<i>symbol</i></b> &lt; <b><i>arg-num</i></b> &gt;   
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| [ <b><i>semantic-action</i></b> ] &lt; <b><i>precedence-symbol</i></b> &gt; <b><i>symbol</i></b> &lt; <b><i>arg-num</i></b> &gt;  ... <b><i>symbol</i></b> &lt; <b><i>arg-num</i></b> &gt;   
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| [ <b><i>semantic-action</i></b> ] <b><i>symbol</i></b> [ <b><i>q-semantic-action</b></i> ] &lt; <b><i>q-type</i></b> &gt; <b><i>quantification</i></b>  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| [ <b><i>semantic-action</i></b> ] <b><i>symbol</i></b> &lt; <b><i>arg-num</i></b> &gt; , ..., <b> <i>symbol</i></b> &lt; <b><i>arg-num</i></b> &gt;   
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| [ <b><i>semantic-action</i></b> ] &#40; <b><i>symbol</i></b> &lt; <b><i>arg-num</i></b> &gt; , ..., <b> <i>symbol</i></b> &lt; <b><i>arg-num</i></b> &gt; &#41;   
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| [ <b><i>semantic-action</i></b> ] &lt; <b><i>precedence-symbol</i></b> &gt; <b><i>symbol</i></b> &lt; <b><i>arg-num</i></b> &gt; , ..., <b><i>symbol</i></b> &lt; <b><i>arg-num</i></b> &gt;   
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|   [ <b><i>semantic-action</i></b> ] <b><i>symbol-or-group</i></b> [ <b><i>semantic-action</i></b> ] &lt; <b><i>type</i></b> &gt; <b><i>quantifier</i></b>  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;  
 }  
 
@@ -46,18 +46,18 @@ Vim scriptのコード生成をする場合は`-vimscript`,
 （後述：文法定義部, &lt; precedence-symbol &gt;）.   
 
 - token-header  
-"token_desc"もしくは"token_asc". 前者の場合, 終端記号定義部での終端記号優先順位は降順に, 後者の場合は昇順になる.   
+token_descもしくはtoken_asc. 前者の場合, 終端記号定義部での終端記号優先順位は降順に, 後者の場合は昇順になる.   
  
 - token-prefix  
 トークンのenumの型名及びトークンのprefixとなる. 省略すると自動的に"token"に設定される. 
 
 - link-direction  
-"left"もしくは"right"もしくは"nonassoc". 終端記号の結合方向を定める. 
+leftもしくはrightもしくはnonassoc. 終端記号の結合方向を定める. 
 
 - terminal-symbol  
 終端記号. 
 
-- &lt; terminal-symbol-type &gt;  
+- terminal-symbol-type  
 終端記号の型. 文法定義部で引数を取る終端記号は必ず型がなければならない. 
 
 ## 文法定義部
@@ -65,8 +65,8 @@ Vim scriptのコード生成をする場合は`-vimscript`,
 非終端記号には必ず型がなければならない.   
 最初に現れた非終端記号が文法全体のrootとなる.   
 
-- &lt; grammar-header &gt;  
-"grammar"のみ. 将来的に拡張される可能性がある.   
+- grammar-header  
+"lalr"のみ. 将来的に拡張される可能性がある.   
 
 - namespace  
 出力されるパーサーを含む名前空間.   
@@ -74,32 +74,41 @@ Vim scriptのコード生成をする場合は`-vimscript`,
 - nonterminal-symbol  
 非終端記号.   
 
-- &lt; nonterminal-symbol-type &gt;  
+- nonterminal-symbol-type  
 直前の非終端記号の型名となる.   
+必須ではない.  
 
-- [ semantic-action ]  
+- semantic-action  
 規則が受理された時に動作するセマンティックアクション.   
 
 - symbol  
 終端記号あるいは非終端記号. 
 
-- &lt; arg-num &gt;  
+- arg-num  
 セマンティックアクションの何番目の引数となるかを表す数値.   
 省略した場合はその記号は引数として扱われない.   
 
-- &lt; precedence-symbol &gt;  
+- precedence-symbol  
 終端記号precedence-symbolが与えられた規則は強制的にその終端記号の優先順位に変更される.   
 
-- q-type  
-量化子修飾によって示される型.   
+- symbol-or-group  
+量化子修飾対象のシンボルまたはパーレンで囲まれたグループ.  
 
-- q-semantic-action  
-量化子修飾のマッチ時に動作するセマンティックアクション.  
+- type  
+量化子修飾セマンティックアクションの返す型.  
 
-- quantification  
-量化子修飾. 以下の演算子が利用可能.  
-    ?, *, +  
-それぞれ0回か1回の繰り返しにマッチ, 0回以上にマッチ, 1回以上にマッチとなる.  
+- quantifier  
+量化子修飾演算子.  
+ - ?  
+ 0回または1回にマッチ.  
+ - *  
+ 0回以上にマッチ
+ - +  
+ 一回以上にマッチ
+
+# 出力
+参照 <http://caper.googlecode.com/svn/trunk/caper/site/caper.html>
+ただしtoken\_eofは本プログラムではtoken\_0に置き換えられている. 
 
 # ライセンス
 同リポジトリのLICENSES参照. 

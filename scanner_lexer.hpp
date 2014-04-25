@@ -50,7 +50,7 @@ namespace kp19pp{
                 while(true){
                     if(c >= 0x80 && c <= 0xBF){
                         c = static_cast<unsigned char>(*(place--));
-                    }else if(c >= 0xC0 && c <= 0xFF){
+                    } else if(c >= 0xC0 && c <= 0xFF){
                         break;
                     }
                 }

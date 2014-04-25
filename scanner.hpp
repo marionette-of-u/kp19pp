@@ -1,10 +1,10 @@
-﻿#ifndef KP19PP_SCANNER_HPP_
+#ifndef KP19PP_SCANNER_HPP_
 #define KP19PP_SCANNER_HPP_
 
 #include <string>
 #include <vector>
-#include <forward_list>
 #include <utility>
+#include <forward_list>
 #include "kp19pp.hpp"
 #include "common.hpp"
 
@@ -57,16 +57,6 @@ namespace kp19pp{
             > base_type;
 
         public:
-            enum class rhs_place{
-                n,
-                semantic_action,
-                rhs_seq_head,
-                rhs_seq_rest,
-                union_seq,
-                extended
-            };
-
-        public:
             enum analysis_phase_enum{
                 phase_token,
                 phase_grammar,
@@ -102,7 +92,6 @@ namespace kp19pp{
                 nonterminal_symbol_data_type();
                 nonterminal_symbol_data_type(const nonterminal_symbol_data_type &other);
                 nonterminal_symbol_data_type(nonterminal_symbol_data_type &&other);
-
                 class rhs_type : public std::vector<std::pair<symbol_type, symbol_type>>{
                 private:
                     typedef std::vector<std::pair<symbol_type, symbol_type>> base_type;
@@ -140,47 +129,49 @@ namespace kp19pp{
                     rhs_type::hash
                 > rhs_set_type;
 
-                token_type      default_semantic_action, type;
+                token_type      type;
                 rhs_set_type    rhs;
             };
 
-            using terminal_symbol_map_type = std::unordered_map<
+            typedef std::unordered_map<
                 symbol_type,
                 terminal_symbol_data_type,
                 symbol_type::hash
-            >;
+            > terminal_symbol_map_type;
             
-            using nonterminal_symbol_map_type = std::unordered_map<
+            typedef std::unordered_map<
                 symbol_type,
                 nonterminal_symbol_data_type,
                 symbol_type::hash
-            >;
+            > nonterminal_symbol_map_type;
             
-            using undefined_nonterminal_symbol_set_type = std::unordered_set<
+            typedef std::unordered_set<
+                symbol_type,
+                symbol_type::hash
+            > undefined_nonterminal_symbol_set_type;
+
+            typedef std::unordered_map<
+                term_type,
+                token_type
+            > term_to_token_map_type;
+
+            typedef std::unordered_map<
+                std::size_t,
+                token_type
+            > number_to_token_map_type;
+
+            typedef std::vector<token_type> token_seq_type;
+            using declared_extended_set = std::unordered_set<
                 symbol_type,
                 symbol_type::hash
             >;
-
-            using term_to_token_map_type = std::unordered_map<
-                term_type,
-                token_type
-            >;
-
-            using number_to_token_map_type = std::unordered_map<
-                std::size_t,
-                token_type
-            >;
-
-            using declared_extended_set = std::set<symbol_type>;
-
-            using token_seq_type = std::vector<token_type>;
 
         public:
             scanner_type();
             void scan(std::istream &in);
-            void make_target();
-            token_type add_extended_rule_name(const token_type&);
+            token_type add_extended_rule_name(const token_type&, char);
             token_type add_extended_rule_name(const token_type&, std::size_t);
+            nonterminal_symbol_data_type &make_nonterminal_symbol(token_type &token, const token_type &nonterminal_type);
             term_type next_terminal_symbol_id();
             term_type next_nonterminal_symbol_id();
             std::size_t next_rhs_number();
@@ -190,19 +181,6 @@ namespace kp19pp{
             void clear_current_rhs_arg_number();
             bool get_scanned_first_nonterminal_symbol() const;
             void set_scanned_first_nonterminal_symbol();
-            bool set_scanned_extended_rule(const token_type &token);
-            nonterminal_symbol_data_type &make_nonterminal_symbol(
-                token_type &token,
-                const token_type &nonterminal_type
-            );
-
-            void inc_union_num();
-            std::size_t clear_union_num();
-            nonterminal_symbol_data_type::rhs_type &current_rhs();
-            nonterminal_symbol_data_type::rhs_type &front_rhs();
-            void push_rhs(rhs_place);
-            void pop_rhs();
-            void clear_extended_data();
 
         private:
             static void define_grammar(scanner_type &scanner);
@@ -220,10 +198,10 @@ namespace kp19pp{
             token_seq_type                          token_seq;
             string_iter_pair_type                   namespace_token,
                                                     namespace_grammar;
-            token_type                              first_semantic_action;
             std::size_t                             current_priority,
                                                     current_token_number;
             std::vector<terminal_symbol_data_type*> current_terminal_symbol_seq;
+            nonterminal_symbol_data_type::rhs_type  current_rhs;
             terminal_symbol_map_type                terminal_symbol_map;
             nonterminal_symbol_map_type             nonterminal_symbol_map;
             undefined_nonterminal_symbol_set_type   undefined_nonterminal_symbol_set;
@@ -233,12 +211,6 @@ namespace kp19pp{
             number_to_token_map_type                number_to_token_map;
             bool                                    external_token;
 
-            token_type
-                current_extended_semantic_action,
-                current_extended_decl,
-                current_extended_type;
-            rhs_place rhs_place_state = rhs_place::n;
-
         private:
             scanner_string_type string;
             term_type           current_terminal_symbol_id,
@@ -247,11 +219,58 @@ namespace kp19pp{
                                 current_rhs_arg_number;
             bool                scanned_first_nonterminal_symbol;
 
-            std::size_t union_num = 0;
-            std::vector<nonterminal_symbol_data_type::rhs_type> current_rhs_stack;
+        public:
+            const scanner_string_type &ref_string = string;
 
-            declared_extended_set scanned_declared_extended_set;
-            std::forward_list<scanner_string_type> extended_storage;
+        public:
+            struct extended_data_type{
+                token_type
+                    identifier = token_type(),
+                    semantic_action = token_type(),
+                    decl = token_type(),
+                    type = token_type();
+                std::vector<token_type> token_seq;
+            };
+
+        private:
+            std::vector<extended_data_type>         extended_data_stack;
+            declared_extended_set                   scanned_declared_extended_set;
+            std::forward_list<scanner_string_type>  extended_storage;
+
+        public:
+            bool extended_rule_is_scanned(const token_type &token);
+            void clear_extended_data();
+            extended_data_type &current_extended_data();
+            bool current_extended_data_is_empty() const;
+            void pop_current_extended_data();
+            extended_data_type &push_extended_data(
+                const token_type &identifier,
+                const std::vector<token_type> &token_seq,
+                const token_type &semantic_action,
+                const token_type &decl,
+                const token_type &type
+            );
+
+        public:
+            using group_element_type = std::pair<token_type, token_type>;
+            struct group_seq_type{
+                std::vector<group_element_type> seq;
+                bool head_is_scanned = false;
+                void clear();
+            };
+
+            using group_seq_stack_type = std::vector<group_seq_type>;
+
+        private:
+            group_seq_type       current_group_seq;
+            group_seq_stack_type group_seq_stack;
+
+        public:
+            group_seq_type &ref_current_group_seq = current_group_seq;
+            group_seq_stack_type &ref_group_seq_stack = group_seq_stack;
+            void push_group_seq_element(const token_type &token, const token_type &arg);
+            void register_group_seq();
+            void dispose_group_seq();
         };
 
 #define KP19PP_SCANNER_DECL_TERMINAL_SYMBOLS() \
@@ -278,17 +297,18 @@ namespace kp19pp{
     DECL(equal) \
     DECL(str)
 
-        enum token{
+
+    enum token{
 #define DECL(name) token_ ## name ,
-            token_0,
-            KP19PP_SCANNER_DECL_TERMINAL_SYMBOLS()
+        token_0,
+        KP19PP_SCANNER_DECL_TERMINAL_SYMBOLS()
 #undef DECL
-        };
+    };
 
         namespace terminal_symbol{
 #define DECL(name) \
     extern scanner_type::term_type name;
-            KP19PP_SCANNER_DECL_TERMINAL_SYMBOLS()
+            KP19PP_SCANNER_DECL_TERMINAL_SYMBOLS();
 #undef DECL
         }
     }

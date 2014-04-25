@@ -1,4 +1,4 @@
-﻿#include "kp19pp.hpp"
+#include "kp19pp.hpp"
 #include <string>
 
 struct eos_functor{
@@ -105,7 +105,7 @@ void example(){
     options.avoid_conflict = true;
     options.disambiguating = true;
     options.put_log = true;
-    options.put_alltime = true;
+    options.put_totaltime = true;
     options.put_time = true;
 
     bool result = lalr1.make_parsing_table(

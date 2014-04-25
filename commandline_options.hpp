@@ -1,4 +1,4 @@
-﻿#ifndef KP19PP_COMMANDLINE_OPTIONS
+#ifndef KP19PP_COMMANDLINE_OPTIONS
 #define KP19PP_COMMANDLINE_OPTIONS
 #include <string>
 
@@ -28,7 +28,7 @@ namespace kp19pp{
         language_enum language() const;
         indent_enum indent() const;
         bool time() const;
-        bool alltime() const;
+        bool totaltime() const;
         bool log() const;
 
     private:
@@ -36,7 +36,7 @@ namespace kp19pp{
         std::string ifile_path_, ofile_path_;
         language_enum language_;
         indent_enum indent_;
-        bool time_, alltime_, log_;
+        bool time_, totaltime_, log_;
     };
 }
 

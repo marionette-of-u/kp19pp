@@ -1,4 +1,4 @@
-﻿#ifndef KP19PP_EXCEPTION_HPP_
+#ifndef KP19PP_EXCEPTION_HPP_
 #define KP19PP_EXCEPTION_HPP_
 
 #include <vector>

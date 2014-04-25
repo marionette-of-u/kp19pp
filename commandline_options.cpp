@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include <algorithm>
 #include <map>
 #include <functional>
@@ -11,7 +11,7 @@ namespace kp19pp{
     }
 
     commandline_options_type::commandline_options_type() :
-        ifile_path_(), ofile_path_(), language_(language_cpp), indent_(indent_space4), time_(false), alltime_(false), log_(false)
+        ifile_path_(), ofile_path_(), language_(language_cpp), indent_(indent_space4), time_(false), totaltime_(false), log_(false)
     {
         command_map["-C++"] =
             command_map["-CPP"] =
@@ -35,7 +35,7 @@ namespace kp19pp{
         command_map["-TIME"] =
             [&](){ time_ = true; };
         command_map["-ALLTIME"] =
-            [&](){ alltime_ = true; };
+            [&](){ totaltime_ = true; };
         command_map["-LOG"] =
             [&](){ log_ = true; };
     }
@@ -106,8 +106,8 @@ namespace kp19pp{
         return time_;
     }
 
-    bool commandline_options_type::alltime() const{
-        return alltime_;
+    bool commandline_options_type::totaltime() const{
+        return totaltime_;
     }
 
     bool commandline_options_type::log() const{
