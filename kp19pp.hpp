@@ -828,21 +828,22 @@ namespace kp19pp{
                         act.action_kind = action_shift;
                         act.action_number = index_j;
                         auto ret = actions_i.insert(std::make_pair(a, act));
-                        if(!ret.second){
-                            auto &other_act(ret.first->second);
-                            std::pair<std::size_t, std::size_t> p;
+                        auto &other_act(ret.first->second);
+                        auto tag_priority = [&](action_type &act) -> std::pair<std::size_t, std::size_t>{
                             auto tag = act.item->rhs->tag();
                             if(tag == epsilon){
                                 auto &x(terminal_data_map.find(tag)->second);
-                                p = std::make_pair(x.priority, x.linkdir);
+                                return std::make_pair(x.priority, x.linkdir);
                             }else{
-                                p = rhs_priority(act.item->rhs);
+                                return rhs_priority(act.item->rhs);
                             }
-                            auto &q(terminal_data_map.find(ret.first->first)->second);
+                        };
+                        std::pair<std::size_t, std::size_t> p = tag_priority(act), q = tag_priority(other_act);
+                        if(!ret.second){
                             if(other_act.action_kind == action_reduce){
-                                if(p.first > q.priority){
+                                if(p.first > q.first){
                                     /* reduce */
-                                }else if(p.first == q.priority){
+                                }else if(p.first == q.first){
                                     if(p.second == left){
                                         /* reduce */
                                     }else if(p.second == right){
@@ -852,8 +853,8 @@ namespace kp19pp{
                                 }
                             }else{
                                 if(options.longest_reduce){
-                                    auto f = [](const decltype(*item.rhs) &large, const decltype(*item.rhs) &small) -> bool{
-                                        if(small.tag() > large.tag() && large.size() <= small.size()){ return false; }
+                                    auto f = [&](const decltype(*item.rhs) &large, const decltype(*item.rhs) &small) -> bool{
+                                        if(q.first >= p.first && large.size() <= small.size()){ return false; }
                                         for(std::size_t i = 0; i < small.size(); ++i){
                                             if(small[i] != large[i]){ return false; }
                                         }
