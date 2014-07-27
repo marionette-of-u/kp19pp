@@ -491,12 +491,13 @@ namespace kp19pp{
             make_parsing_table_options_type() :
                 avoid_conflict(false),
                 disambiguating(false),
+                longest_reduce(false),
                 put_time(false),
                 put_alltime(false),
                 put_log(false)
             {}
 
-            bool avoid_conflict, disambiguating, put_time, put_alltime, put_log;
+            bool avoid_conflict, disambiguating, longest_reduce, put_time, put_alltime, put_log;
         };
 
         void add_terminal_symbol(const term_type &term, const symbol_data_type &symbol_data){
@@ -767,7 +768,7 @@ namespace kp19pp{
                                     if(act.item->rhs->number() < other_act.item->rhs->number()){
                                         actions_i.erase(ret.first);
                                         actions_i.insert(std::make_pair(term, act));
-                                    }else if(act.item->rhs->number() == other_act.item->rhs->number()){
+                                    }else{
                                         append_conflict(other_act, act);
                                         return false;
                                     }
@@ -827,21 +828,22 @@ namespace kp19pp{
                         act.action_kind = action_shift;
                         act.action_number = index_j;
                         auto ret = actions_i.insert(std::make_pair(a, act));
+                        auto &other_act(ret.first->second);
+                        auto tag_priority = [&](action_type &act) -> std::pair<std::size_t, std::size_t>{
+                            auto tag = act.item->rhs->tag();
+                            if(tag == epsilon){
+                                auto &x(terminal_data_map.find(tag)->second);
+                                return std::make_pair(x.priority, x.linkdir);
+                            }else{
+                                return rhs_priority(act.item->rhs);
+                            }
+                        };
+                        std::pair<std::size_t, std::size_t> p = tag_priority(act), q = tag_priority(other_act);
                         if(!ret.second){
-                            auto &other_act(ret.first->second);
                             if(other_act.action_kind == action_reduce){
-                                std::pair<std::size_t, std::size_t> p;
-                                auto tag = act.item->rhs->tag();
-                                if(tag == epsilon){
-                                    auto &x(terminal_data_map.find(tag)->second);
-                                    p = std::make_pair(x.priority, x.linkdir);
-                                }else{
-                                    p = rhs_priority(act.item->rhs);
-                                }
-                                auto &q(terminal_data_map.find(ret.first->first)->second);
-                                if(p.first > q.priority){
+                                if(p.first > q.first){
                                     /* reduce */
-                                }else if(p.first == q.priority){
+                                }else if(p.first == q.first){
                                     if(p.second == left){
                                         /* reduce */
                                     }else if(p.second == right){
@@ -850,7 +852,23 @@ namespace kp19pp{
                                     }
                                 }
                             }else{
-                                append_conflict(ret.first->second, act);
+                                if(options.longest_reduce){
+                                    auto f = [&](const decltype(*item.rhs) &large, const decltype(*item.rhs) &small) -> bool{
+                                        if(q.first >= p.first && large.size() <= small.size()){ return false; }
+                                        for(std::size_t i = 0; i < small.size(); ++i){
+                                            if(small[i] != large[i]){ return false; }
+                                        }
+                                        return true;
+                                    };
+                                    if(f(*act.item->rhs, *other_act.item->rhs)){
+                                        actions_i.erase(ret.first);
+                                        actions_i.insert(std::make_pair(a, act));
+                                    }else{
+                                        append_conflict(ret.first->second, act);
+                                    }
+                                }else{
+                                    append_conflict(ret.first->second, act);
+                                }
                             }
                         }
                     }else if(item.lhs != first_term){ //reduce
